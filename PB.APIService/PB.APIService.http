@@ -1,0 +1,6 @@
+@PB.APIService_HostAddress = http://localhost:5277
+
+GET {{PB.APIService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
