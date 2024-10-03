@@ -34,5 +34,35 @@ namespace PB.APIService.Controllers
             }
             return CreatedAtAction("GetProduct", new { id = product.Id }, product);
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutProduct(int id, Product product)
+        {
+            if (id != product.Id)
+            {
+                return BadRequest();
+            }
+
+            try
+            {
+                _unitOfWork.ProductsRepository.UpdateAsync(product);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ProductExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        private bool ProductExists(int id)
+        {
+            return _unitOfWork.ProductsRepository.GetByIdAsync(id) != null;
+        }
     }
 }
