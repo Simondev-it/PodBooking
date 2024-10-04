@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using PodBooking.SWP391.Base;
 
 namespace PodBooking.SWP391.Base
 {
@@ -131,3 +132,4 @@ namespace PodBooking.SWP391.Base
         #endregion Separating asign entity and save operators
     }
 }
+ 
