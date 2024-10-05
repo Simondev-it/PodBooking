@@ -73,6 +73,20 @@ namespace PB.APIService.Controllers
 
             return NoContent();
         }
+        // DELETE: api/Products/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteProduct(int id)
+        {
+            var product = await _unitOfWork.ProductsRepository.GetByIdAsync(id);
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            await _unitOfWork.ProductsRepository.RemoveAsync(product);
+
+            return NoContent();
+        }
         private bool ProductExists(int id)
         {
             return _unitOfWork.ProductsRepository.GetByIdAsync(id) != null;

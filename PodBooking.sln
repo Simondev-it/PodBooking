@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35222.181
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PodBooking.SWP391", "PodBooking.SWP391\PodBooking.SWP391.csproj", "{6AEB4E74-91CA-4630-BF58-0CDBABB59349}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PodBooking.SWP391", "PodBooking.SWP391\PodBooking.SWP391.csproj", "{6AEB4E74-91CA-4630-BF58-0CDBABB59349}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PB.APIService", "PB.APIService\PB.APIService.csproj", "{78EC3298-D76E-4EB7-A410-19C5E772F6DA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PB.APIService", "PB.APIService\PB.APIService.csproj", "{78EC3298-D76E-4EB7-A410-19C5E772F6DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
