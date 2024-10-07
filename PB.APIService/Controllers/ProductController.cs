@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using PodBooking.SWP391;
 using PodBooking.SWP391.Models;
+using PB.APIService.RequestModel;
+
 
 namespace PB.APIService.Controllers
 {
@@ -10,7 +12,7 @@ namespace PB.APIService.Controllers
     public class ProductController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
-
+        Swp391Context dbc;
         public ProductController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
 
         // GET: api/Products
@@ -35,8 +37,21 @@ namespace PB.APIService.Controllers
         // POST: api/Products
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
-        public async Task<ActionResult<Product>> PostProduct(Product product)
+        public async Task<ActionResult<Product>> PostProduct(ProductRequest productrequest)
         {
+            var product = new Product
+            {
+                Id = productrequest.Id,
+                Name = productrequest.Name,
+                Price = productrequest.Price,
+                CategoryId = productrequest.CategoryId,
+                Rating = productrequest.Rating,
+                StoreId = productrequest.StoreId,
+                Stock = productrequest.Stock,
+                
+                Description = productrequest.Description
+                
+            };
             try
             {
                 await _unitOfWork.ProductsRepository.CreateAsync(product);
@@ -91,5 +106,6 @@ namespace PB.APIService.Controllers
         {
             return _unitOfWork.ProductsRepository.GetByIdAsync(id) != null;
         }
+        
     }
 }
