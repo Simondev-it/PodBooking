@@ -15,7 +15,7 @@ namespace PodBooking.SWP391.Repositories
 
         //public async Task<List<BookingOrder>> GetAllAsync()
         //{
-        //    return await _context.BookingOrders.Include(p => p.Bookibg).ToListAsync();
+        //    return await _context.BookingOrders.Include(p => p.Book).ToListAsync();
         //}
 
         //public async Task<Booking> GetByIdAsync(int id)

@@ -17,9 +17,13 @@ namespace PodBooking.SWP391
         private BookingOrderRepository _bookingOrderRepository;
         private CategoryRepository _categoryRepository;
         private PaymentRepository _paymentRepository;
-        //private PodRepository _podRepository;
-      
-        
+        private PodRepository _podRepository;
+        private SlotRepository _slotRepository;
+        private StoreRepository _storeRepository;
+        private TypeRepository _typeRepository;
+        private UtilityRepository _utilityRepository;
+
+
 
         public UnitOfWork() => _context ??= new Swp391Context();
 
@@ -47,8 +51,29 @@ namespace PodBooking.SWP391
         {
             get { return _paymentRepository ??= new PaymentRepository(_context); }
         }
-
-
-
+        public PodRepository PodRepository
+        {
+            get { return _podRepository ??= new PodRepository(_context); }
+        }
+        public SlotRepository SlotRepository
+        {
+            get { return _slotRepository ??= new SlotRepository(_context); }
+        }
+        public StoreRepository StoreRepository
+        {
+            get { return _storeRepository ??= new StoreRepository(_context); }
+        }
+        public TypeRepository TypeRepository
+        {
+            get { return _typeRepository ??= new TypeRepository(_context); }
+        }
+        public UtilityRepository UtilityRepository
+        {
+            get { return _utilityRepository ??= new UtilityRepository(_context); }
+        }
     }
 }
+
+
+
+  
