@@ -33,7 +33,7 @@ namespace PB.APIService.Controllers
 
             return user;
         }
-        // POST: api/Products
+        // POST: api/User
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
         public async Task<ActionResult<User>> PostUser(UserRequest userRequest)
@@ -101,7 +101,7 @@ namespace PB.APIService.Controllers
 
             return NoContent();
         }
-        // DELETE: api/Products/5
+        // DELETE: api/User/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {

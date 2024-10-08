@@ -13,6 +13,7 @@ namespace PodBooking.SWP391
         private Swp391Context _context;
         private ProductRepository _productsRepository;
         private UserRepository _userRepository;
+        private BookingRepository _bookingRepository;
         //private PodRepository _podRepository;
       
         
@@ -27,10 +28,10 @@ namespace PodBooking.SWP391
         {
             get { return _userRepository ??= new UserRepository(_context); }
         }
-        //public PodRepository PodRepository
-        //{
-        //    get { return _podRepository ??= new PodRepository(_context); }
-        //}
+        public BookingRepository BookingRepository
+        {
+            get { return _bookingRepository ??= new BookingRepository(_context); }
+        }
 
 
 
