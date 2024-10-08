@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PB.APIService.RequestModel;
 using PodBooking.SWP391;
 using PodBooking.SWP391.Models;
+using PB.APIService.RequestModel;
 
 namespace PB.APIService.Controllers
 {
@@ -12,13 +14,13 @@ namespace PB.APIService.Controllers
         private readonly UnitOfWork _unitOfWork;
         public UserController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
 
-        // GET: api/Products
+        // GET: api/User
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUser()
         {
             return await _unitOfWork.UserRepository.GetAllAsync();
         }
-        // GET: api/Products/5
+        // GET: api/User/5
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUser(int id)
         {
@@ -34,8 +36,24 @@ namespace PB.APIService.Controllers
         // POST: api/Products
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
-        public async Task<ActionResult<User>> PostUser(User user)
+        public async Task<ActionResult<User>> PostUser(UserRequest userRequest)
         {
+            var user = new User
+            {
+                Id = userRequest.Id,
+                Name = userRequest.Name,
+                Email = userRequest.Email,
+                Image = userRequest.Image,
+                Role = userRequest.Role,
+                Type = userRequest.Type,
+                Point = userRequest.Point,
+                PhoneNumber = userRequest.PhoneNumber,
+                Description = userRequest.Description,
+                Password = userRequest.Password,
+
+                
+
+            };
             try
             {
                 await _unitOfWork.UserRepository.CreateAsync(user);
@@ -47,16 +65,27 @@ namespace PB.APIService.Controllers
             return CreatedAtAction("GetUser", new { id = user.Id }, user);
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUser(int id, User user)
+        public async Task<IActionResult> PutUser(int id, UserRequest userRequest)
         {
-            if (id != user.Id)
+            // Kiểm tra sản phẩm có tồn tại hay không
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
+            if (user == null)
             {
-                return BadRequest();
+                return NotFound("Sản phẩm không tồn tại.");
             }
 
+            user.Email = userRequest.Email;
+            user.PhoneNumber = userRequest.PhoneNumber;
+            user.Password = userRequest.Password;
+            user.Name = userRequest.Name;
+            user.Image = userRequest.Image;
+            user.Role = userRequest.Role;
+            user.Type = userRequest.Type;
+            user.Point = userRequest.Point;
+            user.Description = userRequest.Description;
             try
             {
-                _unitOfWork.UserRepository.UpdateAsync(user);
+                await _unitOfWork.UserRepository.UpdateAsync(user);
             }
             catch (DbUpdateConcurrencyException)
             {
