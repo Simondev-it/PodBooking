@@ -14,6 +14,7 @@ namespace PodBooking.SWP391
         private ProductRepository _productsRepository;
         private UserRepository _userRepository;
         private BookingRepository _bookingRepository;
+        private BookingOrderRepository _bookingOrderRepository;
         //private PodRepository _podRepository;
       
         
@@ -31,6 +32,10 @@ namespace PodBooking.SWP391
         public BookingRepository BookingRepository
         {
             get { return _bookingRepository ??= new BookingRepository(_context); }
+        }
+        public BookingOrderRepository BookingOrderRepository
+        {
+            get { return _bookingOrderRepository ??= new BookingOrderRepository(_context); }
         }
 
 

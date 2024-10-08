@@ -21,7 +21,7 @@ namespace PB.APIService.Controllers
         }
         // GET: api/Booking/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Booking>> GetUser(int id)
+        public async Task<ActionResult<Booking>> GetBooking(int id)
         {
             var booking = await _unitOfWork.BookingRepository.GetByIdAsync(id);
 

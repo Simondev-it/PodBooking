@@ -13,7 +13,7 @@ public partial class BookingOrder
 
     public string? Status { get; set; }
 
-    public DateOnly? Date { get; set; }
+    public DateTime? Date { get; set; }
 
     public int BookingId { get; set; }
 
