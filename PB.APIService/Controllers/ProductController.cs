@@ -63,16 +63,25 @@ namespace PB.APIService.Controllers
             return CreatedAtAction("GetProduct", new { id = product.Id }, product);
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutProduct(int id, Product product)
+        public async Task<IActionResult> PutProduct(int id, ProductRequest productrequest)
         {
-            if (id != product.Id)
+            // Kiểm tra sản phẩm có tồn tại hay không
+            var product = await _unitOfWork.ProductsRepository.GetByIdAsync(id);
+            if (product == null)
             {
-                return BadRequest();
+                return NotFound("Sản phẩm không tồn tại.");
             }
 
+            product.Description = productrequest.Description;
+            product.Name = productrequest.Name;
+            product.Price = productrequest.Price;
+            product.CategoryId = productrequest.CategoryId;
+            product.Rating = productrequest.Rating;
+            product.StoreId = productrequest.StoreId;
+            product.Stock = productrequest.Stock;
             try
             {
-                _unitOfWork.ProductsRepository.UpdateAsync(product);
+                await _unitOfWork.ProductsRepository.UpdateAsync(product);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -101,7 +110,7 @@ namespace PB.APIService.Controllers
             await _unitOfWork.ProductsRepository.RemoveAsync(product);
 
             return NoContent();
-        }
+        }       
         private bool ProductExists(int id)
         {
             return _unitOfWork.ProductsRepository.GetByIdAsync(id) != null;
