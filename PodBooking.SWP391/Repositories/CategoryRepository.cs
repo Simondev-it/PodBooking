@@ -20,9 +20,11 @@ namespace PodBooking.SWP391.Repositories
 
         public async Task<Category> GetByIdAsync(int id)
         {
-            var result = await _context.Categories .Include(p => p.Products).FirstAsync(p => p.Id == id);
+            // Sử dụng FirstOrDefaultAsync để tránh lỗi "Sequence contains no elements"
+            var result = await _context.Categories.FirstOrDefaultAsync(p => p.Id == id);
 
             return result;
         }
+
     }
 }

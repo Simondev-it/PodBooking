@@ -14,9 +14,9 @@ namespace PB.APIService.Controllers
         public CategoryController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
         // GET: api/Category
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BookingOrder>>> GetBookingOrder()
+        public async Task<ActionResult<IEnumerable<Category>>> GetBookingOrder()
         {
-            return await _unitOfWork.BookingOrderRepository.GetAllAsync();
+            return await _unitOfWork.CategoryRepository.GetAllAsync();
         }
         // GET: api/Category/5
         [HttpGet("{id}")]
