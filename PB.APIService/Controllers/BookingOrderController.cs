@@ -8,10 +8,10 @@ namespace PB.APIService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class BookingOderController : ControllerBase
+    public class BookingOrderController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
-        public BookingOderController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
+        public BookingOrderController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
 
         // GET: api/BookingOrder
         [HttpGet]

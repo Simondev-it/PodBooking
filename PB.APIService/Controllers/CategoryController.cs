@@ -42,9 +42,6 @@ namespace PB.APIService.Controllers
                 Name = categoryRequest.Name,
                 Status = categoryRequest.Status,
                 
-
-
-
             };
             try
             {
