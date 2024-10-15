@@ -15,10 +15,25 @@ namespace PB.APIService.Controllers
 
         // GET: api/utility
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Utility>>> GetUtility()
+        public async Task<ActionResult<IEnumerable<UtilityRequest>>> GetUtility()
         {
-            return await _unitOfWork.UtilityRepository.GetAllAsync();
+            // Lấy tất cả các Utility từ repository
+            var utilities = await _unitOfWork.UtilityRepository.GetAllAsync();
+
+            // Ánh xạ từ entity Utility sang DTO UtilityRequest
+            var utilityRequests = utilities.Select(u => new UtilityRequest
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Image = u.Image,
+                Description = u.Description
+                // Bỏ qua thuộc tính Pods hoặc các thuộc tính không cần thiết khác
+            }).ToList();
+
+            // Trả về danh sách UtilityRequest
+            return Ok(utilityRequests);
         }
+
         // GET: api/utility/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Utility>> GetUtility(int id)
