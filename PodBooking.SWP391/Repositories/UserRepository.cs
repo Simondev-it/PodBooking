@@ -23,5 +23,15 @@ namespace PodBooking.SWP391.Repositories
 
             return result;
         }
+        public User GetUserByUsername(string username)
+        {
+            return _context.Users.FirstOrDefault(u => u.Email == username); // Điều chỉnh theo trường thực tế
+        }
+        public async Task<User> GetUserByCredentialsAsync(string username, string password)
+        {
+            // Giả định bạn có phương thức để kiểm tra mật khẩu đã được băm
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == username && u.Password == password);
+        }
     }
 }

@@ -4,6 +4,7 @@ using PB.APIService.RequestModel;
 using PodBooking.SWP391.Models;
 using PodBooking.SWP391;
 using PodBooking.SWP391.Repositories;
+using Microsoft.AspNetCore.Authorization;
 
 namespace PB.APIService.Controllers
 {
@@ -14,6 +15,7 @@ namespace PB.APIService.Controllers
         private readonly UnitOfWork _unitOfWork;
         public PodController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
         // GET: api/Pod
+        
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Pod>>> GetPod()
         {
@@ -115,6 +117,7 @@ namespace PB.APIService.Controllers
         {
             return _unitOfWork.PodRepository.GetByIdAsync(id) != null;
         }
+
 
     }
 }
