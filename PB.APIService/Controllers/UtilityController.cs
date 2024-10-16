@@ -17,22 +17,33 @@ namespace PB.APIService.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UtilityRequest>>> GetUtility()
         {
-            // Lấy tất cả các Utility từ repository
+            // Lấy tất cả các Utility từ repository, bao gồm cả Pods
             var utilities = await _unitOfWork.UtilityRepository.GetAllAsync();
 
-            // Ánh xạ từ entity Utility sang DTO UtilityRequest
+            // Ánh xạ từ entity Utility sang DTO UtilityRequest, kèm theo danh sách Pods
             var utilityRequests = utilities.Select(u => new UtilityRequest
             {
                 Id = u.Id,
                 Name = u.Name,
                 Image = u.Image,
-                Description = u.Description
-                // Bỏ qua thuộc tính Pods hoặc các thuộc tính không cần thiết khác
+                Description = u.Description,
+                Pods = u.Pods.Select(p => new PodRequest
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Image = p.Image,
+                    Description = p.Description,
+                    Rating = p.Rating,
+                    Status = p.Status,
+                    TypeId = p.TypeId,
+                    StoreId = p.StoreId
+                }).ToList() // Ánh xạ từng Pod entity sang PodRequest
             }).ToList();
 
-            // Trả về danh sách UtilityRequest
+            // Trả về danh sách UtilityRequest kèm theo Pods
             return Ok(utilityRequests);
         }
+
 
         // GET: api/utility/5
         [HttpGet("{id}")]
