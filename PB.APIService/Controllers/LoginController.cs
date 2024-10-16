@@ -21,7 +21,6 @@ namespace PB.APIService.Controllers
             _configuration = configuration;
             _unitOfWork = unitOfWork;
         }
-
         [HttpPost("authenticate")]
         public async Task<IActionResult> Authenticate([FromBody] LoginRequest loginRequest)
         {
@@ -32,19 +31,20 @@ namespace PB.APIService.Controllers
                 return Unauthorized(new { message = "Invalid email or password" });
             }
 
-            var token = GenerateJwtToken(user.Email, user.Role);
-            return Ok(new { token, user.Email, user.Role });
+            var token = GenerateJwtToken(user.Id, user.Email, user.Role); // Thêm Id vào hàm tạo token
+            return Ok(new { token, user.Email, user.Role, user.Id });
         }
 
-        private string GenerateJwtToken(string username, string role) // Thêm tham số role
+        private string GenerateJwtToken(int id, string username, string role)
         {
             var jwtSettings = _configuration.GetSection("Jwt").Get<JWTSetting>();
 
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, username), // ID hoặc username của người dùng
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // ID của token
-                new Claim(ClaimTypes.Role, role) // Thêm quyền vào claims
+                new Claim(JwtRegisteredClaimNames.Sub, username), // Email hoặc username của người dùng
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Token ID
+                new Claim(ClaimTypes.NameIdentifier, id.ToString()), // Chuyển ID thành string
+                new Claim(ClaimTypes.Role, role) // Lưu role vào claims
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key));
@@ -60,6 +60,7 @@ namespace PB.APIService.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
 
         [HttpGet("admin")]
         [Authorize(Policy = "RequireAdminRole")]
