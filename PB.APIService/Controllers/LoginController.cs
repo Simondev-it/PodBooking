@@ -29,17 +29,16 @@ namespace PB.APIService.Controllers
 
             if (user == null)
             {
-                return Unauthorized();
+                return Unauthorized(new { message = "Invalid email or password" });
             }
 
-            // Đảm bảo rằng role được lấy từ người dùng
             var token = GenerateJwtToken(user.Email, user.Role);
-            return Ok(new { token });
+            return Ok(new { token, user.Email, user.Role });
         }
 
         private string GenerateJwtToken(string username, string role) // Thêm tham số role
         {
-            var jwtSettings = _configuration.GetSection("Jwt").Get<JwtSettings>();
+            var jwtSettings = _configuration.GetSection("Jwt").Get<JWTSetting>();
 
             var claims = new[]
             {
@@ -62,19 +61,27 @@ namespace PB.APIService.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        [Authorize(Policy = "User")] // Nếu bạn đã thiết lập policy
-        [HttpGet("user-only")]
-        public IActionResult GetUserData()
+        [HttpGet("admin")]
+        [Authorize(Policy = "RequireAdminRole")]
+        public IActionResult AdminOnlyEndpoint()
         {
-            return Ok("This is user data.");
+            return Ok("You are an Admin and you can access this endpoint.");
         }
 
-
-        [Authorize(Roles = "Admin")] // Chỉ người dùng có quyền "Admin" mới có thể truy cập endpoint này
-        [HttpGet("admin-only")]
-        public IActionResult GetAdminData()
+        // Endpoint yêu cầu role "User" để truy cập
+        [HttpGet("user")]
+        [Authorize(Policy = "RequireUserRole")]
+        public IActionResult UserOnlyEndpoint()
         {
-            return Ok("This is admin data.");
+            return Ok("You are a User and you can access this endpoint.");
+        }
+
+        // Endpoint chỉ yêu cầu xác thực, không phân biệt role
+        [HttpGet("authenticated")]
+        [Authorize] // Chỉ yêu cầu token hợp lệ
+        public IActionResult AuthenticatedEndpoint()
+        {
+            return Ok("You are authenticated and can access this endpoint.");
         }
 
     }

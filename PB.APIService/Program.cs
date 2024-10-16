@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PB.APIService.RequestModel;
 using PodBooking.SWP391;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -14,8 +15,10 @@ namespace PB.APIService
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
+            // Read JWT configuration from appsettings.json
+            var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JWTSetting>();
 
+            // Configure JWT authentication service
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -32,72 +35,98 @@ namespace PB.APIService
                     ValidIssuer = jwtSettings.Issuer,
                     ValidAudience = jwtSettings.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
-                    ClockSkew = TimeSpan.Zero // Loại bỏ thời gian chờ cho token hết hạn
+                    RoleClaimType = ClaimTypes.Role, // Xác định claim "role"
+                    ClockSkew = TimeSpan.Zero // Eliminate expiration time lag
+                };
+
+                // Add event handlers to log token validation issues
+                options.Events = new JwtBearerEvents
+                {
+                    OnAuthenticationFailed = context =>
+                    {
+                        Console.WriteLine("Authentication failed: " + context.Exception.Message);
+                        return Task.CompletedTask;
+                    },
+                    OnTokenValidated = context =>
+                    {
+                        Console.WriteLine("Token validated successfully");
+                        return Task.CompletedTask;
+                    }
                 };
             });
 
-            // Thêm chính sách phân quyền
+            // Configure authorization policies
             builder.Services.AddAuthorization(options =>
             {
-                options.AddPolicy("RequireAdministratorRole", policy => policy.RequireRole("Admin"));
+                options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
                 options.AddPolicy("RequireUserRole", policy => policy.RequireRole("User"));
+                
             });
 
-            // Thêm các dịch vụ khác
-            builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
+            // Register other services
+            builder.Services.AddScoped<UnitOfWork>();
+            builder.Services.AddControllers().AddJsonOptions(options =>
+                options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
+
+            // Configure CORS
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowSpecificOrigin", policy =>
+                    policy.WithOrigins("http://localhost:5173")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials());
+            });
+
+            // Configure Swagger with JWT support
+            // Configure Swagger with JWT support
             builder.Services.AddSwaggerGen(c =>
             {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "PodBooking API", Version = "v1" });
+
+                // Cấu hình xác thực JWT Bearer cho Swagger
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
-                    In = ParameterLocation.Header,
-                    Description = "Please insert JWT with Bearer into field",
                     Name = "Authorization",
                     Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
                     BearerFormat = "JWT",
-                    Scheme = "Bearer"
+                    In = ParameterLocation.Header,
+                    Description = "Enter 'Bearer' [space] and then your valid token in the text input below.\r\n\r\nExample: \"Bearer abc123\""
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
                 {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
-                        },
-                        new string[] { }
-                    }
-                });
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
             });
 
-            builder.Services.AddScoped<UnitOfWork>();
-            builder.Services.AddControllers().AddJsonOptions(options => options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("AllowSpecificOrigin",
-                    builder => builder.WithOrigins("http://localhost:5173")
-                                      .AllowAnyHeader()
-                                      .AllowAnyMethod());
-            });
 
             var app = builder.Build();
 
-            // Cấu hình pipeline HTTP request.
+            // Middleware configuration
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
-            app.UseCors("AllowSpecificOrigin");
-            app.UseAuthentication();
-            app.UseAuthorization();
+            app.UseCors("AllowSpecificOrigin"); // Ensure CORS middleware is applied before Authentication
 
-            app.MapControllers();
+            app.UseAuthentication(); // Authentication middleware
+            app.UseAuthorization(); // Authorization middleware
+
+            app.MapControllers(); // Map controllers
 
             app.Run();
         }
