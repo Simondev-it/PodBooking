@@ -1,21 +1,14 @@
-﻿using PodBooking.SWP391.Models;
-
-namespace PB.APIService.RequestModel
+﻿namespace PB.APIService.RequestModel
 {
-    public class BookingRequest
+    public class BookingDTO
     {
         public int Id { get; set; }
-
         public DateTime Date { get; set; }
-
         public string Status { get; set; }
-
         public string Feedback { get; set; }
-
         public int PodId { get; set; }
-
         public int UserId { get; set; }
-
-        public virtual ICollection<int> SlotIds { get; set; } = new List<int>();
+        public List<int> SlotIds { get; set; } // Chỉ cần ID của slot
     }
+
 }

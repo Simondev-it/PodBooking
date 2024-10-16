@@ -24,5 +24,11 @@ namespace PodBooking.SWP391.Repositories
 
             return result;
         }
+        //public async Task<List<Slot>> GetByBookingIdAsync(int bookingId)
+        //{
+        //    return await _context.Slots
+        //        .Where(sb => sb.BookingId == bookingId)
+        //        .ToListAsync();
+        //}
     }
 }

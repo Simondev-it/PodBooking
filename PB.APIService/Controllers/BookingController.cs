@@ -34,31 +34,72 @@ namespace PB.APIService.Controllers
         }
         // POST: api/Products
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
+        // POST: api/bookings
         [HttpPost]
-        public async Task<ActionResult<Booking>> PostBooking(BookingRequest bookingRequest)
+        public async Task<ActionResult<BookingDTO>> PostBooking(BookingRequest bookingRequest)
         {
+            // Kiểm tra danh sách SlotIds
+            if (bookingRequest.SlotIds == null || !bookingRequest.SlotIds.Any())
+            {
+                return BadRequest("Danh sách SlotId không thể trống.");
+            }
+
+            // Danh sách để lưu các Slot đã được tìm thấy
+            var slots = new List<Slot>();
+
+            // Lặp qua danh sách SlotIds để tìm các Slot tương ứng
+            foreach (var slotId in bookingRequest.SlotIds)
+            {
+                var existingSlot = await _unitOfWork.SlotRepository.GetByIdAsync(slotId);
+                if (existingSlot == null)
+                {
+                    return NotFound($"Slot với ID {slotId} không tồn tại.");
+                }
+                slots.Add(existingSlot);
+            }
+
+            // Tạo đối tượng Booking
             var booking = new Booking
             {
                 Id = bookingRequest.Id,
                 Date = bookingRequest.Date,
                 Status = bookingRequest.Status,
                 Feedback = bookingRequest.Feedback,
-                PodId=bookingRequest.PodId,
-                UserId=bookingRequest.UserId,
-
-
-
+                PodId = bookingRequest.PodId,
+                UserId = bookingRequest.UserId,
+                Slots = slots // Gán danh sách slots đã tìm thấy vào booking
             };
+
+            // Lưu booking vào cơ sở dữ liệu
             try
             {
                 await _unitOfWork.BookingRepository.CreateAsync(booking);
             }
             catch (DbUpdateConcurrencyException)
             {
-
+                return StatusCode(StatusCodes.Status500InternalServerError, "Lỗi khi tạo booking.");
             }
-            return CreatedAtAction("GetBooking", new { id = booking.Id }, booking);
+
+            // Tạo BookingDTO để trả về
+            var bookingDTO = new BookingDTO
+            {
+                Id = booking.Id,
+                Date = (DateTime)booking.Date,
+                Status = booking.Status,
+                Feedback = booking.Feedback,
+                PodId = booking.PodId,
+                UserId = booking.UserId,
+                SlotIds = booking.Slots.Select(s => s.Id).ToList() // Chỉ lấy ID của slot
+            };
+
+            // Trả về 201 Created với thông tin booking
+            return CreatedAtAction(nameof(GetBooking), new { id = bookingDTO.Id }, bookingDTO);
         }
+
+
+
+
+
         [HttpPut("{id}")]
         public async Task<IActionResult> PutBooking(int id, BookingRequest bookingRequest)
         {
