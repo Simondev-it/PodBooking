@@ -53,7 +53,7 @@ namespace PB.APIService.Controllers
             {
 
             }
-            return CreatedAtAction("GeType", new { id = type.Id }, type);
+            return CreatedAtAction(nameof(GetType), new { id = type.Id }, type);
         }
         [HttpPut("{id}")]
         public async Task<IActionResult> PutType(int id,TypeRequest typeRequest)
