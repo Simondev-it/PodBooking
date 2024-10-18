@@ -4415,9 +4415,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\giao.lang.PRN\\PODInANutShell\\LibraryInANutShell\\LibraryInANutShell.csproj",
-      "projectName": "LibraryInANutShell",
-      "projectPath": "D:\\giao.lang.PRN\\PODInANutShell\\LibraryInANutShell\\LibraryInANutShell.csproj",
+      "projectUniqueName": "D:\\giao.lang.PRN\\PODInANutShell\\LibraryInANutShell\\PodBooking.SWP391.csproj",
+      "projectName": "PodBooking.SWP391",
+      "projectPath": "D:\\giao.lang.PRN\\PODInANutShell\\LibraryInANutShell\\PodBooking.SWP391.csproj",
       "packagesPath": "C:\\Users\\ACER\\.nuget\\packages\\",
       "outputPath": "D:\\giao.lang.PRN\\PODInANutShell\\LibraryInANutShell\\obj\\",
       "projectStyle": "PackageReference",

@@ -68,6 +68,7 @@ namespace LibraryInANutShell.Base
             _context.Add(entity);
             return await _context.SaveChangesAsync();
         }
+
         public async Task<int> UpdateAsync(T entity)
         {
             var tracker = _context.Attach(entity);
