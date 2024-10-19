@@ -5,6 +5,7 @@ using PodBooking.SWP391.Models;
 using PodBooking.SWP391;
 using PodBooking.SWP391.Repositories;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
 
 namespace PB.APIService.Controllers
 {
@@ -37,9 +38,31 @@ namespace PB.APIService.Controllers
         // POST: api/Pod
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
-        public async Task<ActionResult<Pod>> PostPod(PodRequest podRequest)
+        public async Task<ActionResult<PodDTO>> PostBooking(PodRequest podRequest)
         {
-            var pod = new Pod
+            // Kiểm tra danh sách SlotIds
+            if (podRequest.UtilityId == null || !podRequest.UtilityId.Any())
+
+            {
+                return BadRequest("Danh sách Utility không thể trống.");
+            }
+
+            // Danh sách để lưu các Slot đã được tìm thấy
+            var utilitys = new List<PodBooking.SWP391.Models.Utility>();
+
+            // Lặp qua danh sách SlotIds để tìm các Slot tương ứng
+            foreach (var utilityid in podRequest.UtilityId)
+            {
+                var existingSlot = await _unitOfWork.UtilityRepository.GetByIdAsync(utilityid);
+                if (existingSlot == null)
+                {
+                    return NotFound($"Slot với ID {utilityid} không tồn tại.");
+                }
+                utilitys.Add(existingSlot);
+            }
+
+            // Tạo đối tượng Booking
+            var pod  = new Pod
             {
                 Id = podRequest.Id,
                 Name = podRequest.Name,
@@ -49,19 +72,40 @@ namespace PB.APIService.Controllers
                 Status = podRequest.Status,
                 TypeId = podRequest.TypeId,
                 StoreId = podRequest.StoreId,
-                
+                Utilities = utilitys
 
+                // Gán danh sách slots đã tìm thấy vào booking
             };
+
+            // Lưu booking vào cơ sở dữ liệu
             try
             {
                 await _unitOfWork.PodRepository.CreateAsync(pod);
             }
             catch (DbUpdateConcurrencyException)
             {
-
+                return StatusCode(StatusCodes.Status500InternalServerError, "Lỗi khi tạo booking.");
             }
-            return CreatedAtAction("GetPod", new { id = pod.Id }, pod);
+
+            // Tạo BookingDTO để trả về
+            var poddto = new PodDTO
+            {
+                Id = pod.Id,
+                Name = pod.Name,
+                Image= pod.Image,
+                Description = pod.Description,
+                Rating = pod.Rating,
+                Status = pod.Status,
+                TypeId = pod.TypeId,
+                StoreId = pod.StoreId,
+
+                UtilityId = pod.Utilities.Select(s => s.Id).ToList() // Chỉ lấy ID của slot
+            };
+
+            // Trả về 201 Created với thông tin booking
+            return CreatedAtAction(nameof(GetPod), new { id = poddto.Id }, poddto);
         }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> PutPod(int id, PodRequest podRequest)
         {

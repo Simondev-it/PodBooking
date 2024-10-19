@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using PB.APIService.RequestModel;
 using PodBooking.SWP391;
@@ -32,7 +33,7 @@ namespace PB.APIService.Controllers
 
             return booking;
         }
-        // POST: api/Products
+        
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         // POST: api/bookings
         [HttpPost]
@@ -133,20 +134,47 @@ namespace PB.APIService.Controllers
 
             return NoContent();
         }
-        // DELETE: api/Booking/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBooking(int id)
         {
-            var booking = await _unitOfWork.BookingRepository.GetByIdAsync(id);
-            if (booking == null)
+            try
             {
-                return NotFound();
+                // Tìm Booking theo ID
+                var booking = await _unitOfWork.BookingRepository.GetByIdAsync(id);
+                if (booking == null)
+                {
+                    return NotFound(new { message = "Booking không tồn tại." });
+                }
+
+                // Xóa Booking
+                await _unitOfWork.BookingRepository.RemoveAsync(booking);
+
+                return NoContent();
             }
+            catch (DbUpdateException ex)
+            {
+                // Kiểm tra xem lỗi có liên quan đến khóa ngoại không
+                if (ex.InnerException is SqlException sqlEx && sqlEx.Number == 547)
+                {
+                    // Trả về lỗi rõ ràng cho người dùng
+                    return BadRequest(new
+                    {
+                        message = "Không thể xóa Booking do còn SlotBookings liên quan. Hãy xóa các SlotBookings trước."
+                    });
+                }
 
-            await _unitOfWork.BookingRepository.RemoveAsync(booking);
-
-            return NoContent();
+                // Xử lý các lỗi khác
+                return StatusCode(500, new { message = "Đã xảy ra lỗi khi xóa Booking.", details = ex.Message });
+            }
         }
+
+
+
+
+
+
+
+
         private bool BookingExists(int id)
         {
             return _unitOfWork.BookingRepository.GetByIdAsync(id) != null;

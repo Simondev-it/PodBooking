@@ -1,6 +1,7 @@
-﻿namespace PB.APIService.RequestModel
+﻿
+namespace PB.APIService.RequestModel
 {
-    public class PodRequest
+    public class PodDTO
     {
         public int Id { get; set; }
 
@@ -18,7 +19,9 @@
 
         public int StoreId { get; set; }
 
+        // Thông tin liên quan đến Utility
         public List<int> UtilityId { get; set; }
+
 
     }
 }
