@@ -1,26 +1,32 @@
-﻿using LibraryInANutShell.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using LibraryInANutShell;
-using Microsoft.AspNetCore.Mvc;
-using static APIInANutShell.Controllers.PodController;
+using LibraryInANutShell.Models;
+using PB.APIService.ModelRequest;
+using LibraryInANutShell.Models;
+using LibraryInANutShell;
+using PB.APIService.ModelRequest;
 
-namespace APIInANutShell.Controllers
+
+namespace PB.APIService.Controllers
 {
-    [Route("api/[Controller]")]
+    [Route("api/[controller]")]
     [ApiController]
-
     public class ProductController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
+        Swp391Context dbc;
         public ProductController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
 
+        // GET: api/Products
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProduct()
         {
             return await _unitOfWork.ProductRepository.GetAllAsync();
         }
-
+        // GET: api/Products/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Product>> GetProductById(int id)
+        public async Task<ActionResult<Product>> GetProduct(int id)
         {
             var product = await _unitOfWork.ProductRepository.GetByIdAsync(id);
 
@@ -31,31 +37,72 @@ namespace APIInANutShell.Controllers
 
             return product;
         }
-
-
+        // POST: api/Products
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
-        public async Task<ActionResult> CreatePod(ProductDTO slot)
+        public async Task<ActionResult<Product>> PostProduct(ProductRequest productrequest)
         {
-            var newProduct = new Product
+            var product = new Product
             {
-                Id = slot.Id,
-                Name = slot.Name,
-                Price = slot.Price,
-                Description = slot.Description,
-                Rating = slot.Rating,
-                Stock = slot.Stock,
-                StoreId = slot.StoreId,
-                CategoryId = slot.CategoryId,
+                Id = productrequest.Id,
+                Name = productrequest.Name,
+                Price = productrequest.Price,
+                CategoryId = productrequest.CategoryId,
+                Rating = productrequest.Rating,
+                StoreId = productrequest.StoreId,
+                Stock = productrequest.Stock,
+
+                Description = productrequest.Description
+
             };
+            try
+            {
+                await _unitOfWork.ProductRepository.CreateAsync(product);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
 
-            await _unitOfWork.ProductRepository.CreateAsync(newProduct);
-            await _unitOfWork.ProductRepository.SaveAsync();
-
-            return CreatedAtAction(nameof(GetProductById), new { id = slot.Id }, slot);
+            }
+            return CreatedAtAction("GetProduct", new { id = product.Id }, product);
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutProduct(int id, ProductRequest productrequest)
+        {
+            // Kiểm tra sản phẩm có tồn tại hay không
+            var product = await _unitOfWork.ProductRepository.GetByIdAsync(id);
+            if (product == null)
+            {
+                return NotFound("Sản phẩm không tồn tại.");
+            }
 
+            product.Description = productrequest.Description;
+            product.Name = productrequest.Name;
+            product.Price = productrequest.Price;
+            product.CategoryId = productrequest.CategoryId;
+            product.Rating = productrequest.Rating;
+            product.StoreId = productrequest.StoreId;
+            product.Stock = productrequest.Stock;
+            try
+            {
+                await _unitOfWork.ProductRepository.UpdateAsync(product);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ProductExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        // DELETE: api/Products/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProductById(int id)
+        public async Task<IActionResult> DeleteProduct(int id)
         {
             var product = await _unitOfWork.ProductRepository.GetByIdAsync(id);
             if (product == null)
@@ -63,31 +110,14 @@ namespace APIInANutShell.Controllers
                 return NotFound();
             }
 
-            var result = await _unitOfWork.ProductRepository.RemoveAsync(product);
-            if (result)
-            {
-                return NoContent();
-            }
+            await _unitOfWork.ProductRepository.RemoveAsync(product);
 
-            return StatusCode(500, "Có lỗi xảy ra khi xóa Product.");
+            return NoContent();
         }
-        public class ProductDTO
+        private bool ProductExists(int id)
         {
-            public int Id { get; set; }
-
-            public string? Name { get; set; }
-
-            public int? Price { get; set; }
-
-            public string? Description { get; set; }
-
-            public int? Rating { get; set; }
-
-            public int? Stock { get; set; }
-
-            public int StoreId { get; set; }
-
-            public int CategoryId { get; set; }
+            return _unitOfWork.ProductRepository.GetByIdAsync(id) != null;
         }
+
     }
 }

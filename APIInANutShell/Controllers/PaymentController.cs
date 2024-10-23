@@ -1,46 +1,29 @@
 ﻿using LibraryInANutShell.Models;
 using LibraryInANutShell;
 using Microsoft.AspNetCore.Mvc;
-using static APIInANutShell.Controllers.CategoryController;
+using Microsoft.EntityFrameworkCore;
+using PB.APIService.ModelRequest;
+using PB.APIService.ModelRequest;
+using LibraryInANutShell;
+using LibraryInANutShell.Models;
 
-namespace APIInANutShell.Controllers
+namespace PB.APIService.Controllers
 {
-    [Route("api/[Controller]")]
+    [Route("api/[controller]")]
     [ApiController]
-
     public class PaymentController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
-
         public PaymentController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
-
+        // GET: api/Payment
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Payment>>> GetPayment()
         {
             return await _unitOfWork.PaymentRepository.GetAllAsync();
         }
-
-        [HttpPost]
-        public async Task<ActionResult> CreatePayment(PaymentDTO slot)
-        {
-            var newPayment = new Payment
-            {
-                Id = slot.Id,
-                Method = slot.Method,
-                Amount = slot.Amount,
-                Status = slot.Status,
-                Date = slot.Date,
-                BookingId = slot.BookingId,
-            };
-
-            await _unitOfWork.PaymentRepository.CreateAsync(newPayment);
-            await _unitOfWork.PaymentRepository.SaveAsync();
-
-            return CreatedAtAction(nameof(GetPaymentById), new { id = slot.Id }, slot);
-        }
-
+        // GET: api/Payment/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Payment>> GetPaymentById(int id)
+        public async Task<ActionResult<Payment>> GetPayment(int id)
         {
             var payment = await _unitOfWork.PaymentRepository.GetByIdAsync(id);
 
@@ -51,9 +34,70 @@ namespace APIInANutShell.Controllers
 
             return payment;
         }
+        // POST: api/Payment
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
+        [HttpPost]
+        public async Task<ActionResult<Payment>> PostPayment(PaymentRequest paymentRequest)
+        {
+            var payment = new Payment
+            {
+                Id = paymentRequest.Id,
+                Method = paymentRequest.Method,
+                Amount = paymentRequest.Amount,
+                Date = paymentRequest.Date,
+                Status = paymentRequest.Status,
+                BookingId = paymentRequest.BookingId,
 
+            };
+            try
+            {
+                await _unitOfWork.PaymentRepository.CreateAsync(payment);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+
+            }
+            return CreatedAtAction("GetPayment", new { id = payment.Id }, payment);
+        }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutPayment(int id, PaymentRequest paymentRequest)
+        {
+            // Kiểm tra sản phẩm có tồn tại hay không
+            var payment = await _unitOfWork.PaymentRepository.GetByIdAsync(id);
+            if (payment == null)
+            {
+                return NotFound("Sản phẩm không tồn tại.");
+            }
+
+            payment.Method = paymentRequest.Method;
+            payment.Amount = paymentRequest.Amount;
+            payment.Date = paymentRequest.Date;
+            payment.Status = paymentRequest.Status;
+            payment.BookingId = paymentRequest.BookingId;
+
+
+
+            try
+            {
+                await _unitOfWork.PaymentRepository.UpdateAsync(payment);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!PaymentExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        // DELETE: api/Payment/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePaymentById(int id)
+        public async Task<IActionResult> DeletePayment(int id)
         {
             var payment = await _unitOfWork.PaymentRepository.GetByIdAsync(id);
             if (payment == null)
@@ -61,30 +105,14 @@ namespace APIInANutShell.Controllers
                 return NotFound();
             }
 
-            var result = await _unitOfWork.PaymentRepository.RemoveAsync(payment);
-            if (result)
-            {
-                return NoContent();
-            }
+            await _unitOfWork.PaymentRepository.RemoveAsync(payment);
 
-            return StatusCode(500, "Có lỗi xảy ra khi xóa Category.");
+            return NoContent();
         }
-
-        public class PaymentDTO
+        private bool PaymentExists(int id)
         {
-            public int Id { get; set; }
-
-            public string? Method { get; set; }
-
-            public int? Amount { get; set; }
-
-            public DateOnly? Date { get; set; }
-
-            public string? Status { get; set; }
-
-            public int BookingId { get; set; }
+            return _unitOfWork.PaymentRepository.GetByIdAsync(id) != null;
         }
-
 
     }
 }

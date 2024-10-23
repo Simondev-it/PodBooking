@@ -1,26 +1,28 @@
-﻿using LibraryInANutShell;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PB.APIService.ModelRequest;
+using LibraryInANutShell;
 using LibraryInANutShell.Models;
-using Microsoft.AspNetCore.Mvc;
-using static APIInANutShell.Controllers.TypeController;
+using PB.APIService.ModelRequest;
 
-namespace APIInANutShell.Controllers
+namespace PB.APIService.Controllers
 {
-    [Route("api/[Controller]")]
+    [Route("api/[controller]")]
     [ApiController]
-
     public class UserController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
         public UserController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
 
+        // GET: api/User
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUser()
         {
             return await _unitOfWork.UserRepository.GetAllAsync();
         }
-
+        // GET: api/User/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUserById(int id)
+        public async Task<ActionResult<User>> GetUser(int id)
         {
             var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
 
@@ -31,32 +33,77 @@ namespace APIInANutShell.Controllers
 
             return user;
         }
-
+        // POST: api/User
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
-        public async Task<ActionResult> CreateSlot(UserDTO slot)
+        public async Task<ActionResult<User>> PostUser(UserRequest userRequest)
         {
-            var newUser = new User
+            var user = new User
             {
-                Id = slot.Id,
-                Email = slot.Email,
-                Password = slot.Password,
-                Name    = slot.Name,
-                Image = slot.Image,
-                Role = slot.Role,
-                Type = slot.Type,
-                PhoneNumber = slot.PhoneNumber,
-                Point = slot.Point,
-                Description = slot.Description,
+                Id = userRequest.Id,
+                Name = userRequest.Name,
+                Email = userRequest.Email,
+                Image = userRequest.Image,
+                Role = userRequest.Role,
+                Type = userRequest.Type,
+                Point = userRequest.Point,
+                PhoneNumber = userRequest.PhoneNumber,
+                Description = userRequest.Description,
+                Password = userRequest.Password,
+
+
+
             };
+            try
+            {
+                await _unitOfWork.UserRepository.CreateAsync(user);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
 
-            await _unitOfWork.UserRepository.CreateAsync(newUser);
-            await _unitOfWork.UserRepository.SaveAsync();
-
-            return CreatedAtAction(nameof(GetUserById), new { id = slot.Id }, slot);
+            }
+            return CreatedAtAction("GetUser", new { id = user.Id }, user);
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutUser(int id, UserRequest userRequest)
+        {
+            // Kiểm tra sản phẩm có tồn tại hay không
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound("Sản phẩm không tồn tại.");
+            }
 
+            user.Email = userRequest.Email;
+            user.PhoneNumber = userRequest.PhoneNumber;
+            user.Password = userRequest.Password;
+            user.Name = userRequest.Name;
+            user.Image = userRequest.Image;
+            user.Role = userRequest.Role;
+            user.Type = userRequest.Type;
+            user.Point = userRequest.Point;
+            user.Description = userRequest.Description;
+            try
+            {
+                await _unitOfWork.UserRepository.UpdateAsync(user);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!UserExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        // DELETE: api/User/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUserById(int id)
+        public async Task<IActionResult> DeleteUser(int id)
         {
             var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
             if (user == null)
@@ -64,36 +111,13 @@ namespace APIInANutShell.Controllers
                 return NotFound();
             }
 
-            var result = await _unitOfWork.UserRepository.RemoveAsync(user);
-            if (result)
-            {
-                return NoContent();
-            }
+            await _unitOfWork.UserRepository.RemoveAsync(user);
 
-            return StatusCode(500, "Có lỗi xảy ra khi xóa User.");
+            return NoContent();
         }
-
-        public class UserDTO
+        private bool UserExists(int id)
         {
-            public int Id { get; set; }
-
-            public string? Email { get; set; }
-
-            public string? Password { get; set; }
-
-            public string? Name { get; set; }
-
-            public string? Image { get; set; }
-
-            public string? Role { get; set; }
-
-            public string? Type { get; set; }
-
-            public string? PhoneNumber { get; set; }
-
-            public int? Point { get; set; }
-
-            public string? Description { get; set; }
+            return _unitOfWork.UserRepository.GetByIdAsync(id) != null;
         }
     }
 }

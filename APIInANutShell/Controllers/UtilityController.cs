@@ -1,26 +1,28 @@
-﻿using LibraryInANutShell.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PB.APIService.ModelRequest;
+using LibraryInANutShell.Models;
 using LibraryInANutShell;
-using Microsoft.AspNetCore.Mvc;
-using static APIInANutShell.Controllers.UserController;
+using PB.APIService.ModelRequest;
 
-namespace APIInANutShell.Controllers
+namespace PB.APIService.Controllers
 {
-    [Route("api/[Controller]")]
+    [Route("api/[controller]")]
     [ApiController]
-
     public class UtilityController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
         public UtilityController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
 
+        // GET: api/utility
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Utility>>> GetUtility()
         {
             return await _unitOfWork.UtilityRepository.GetAllAsync();
         }
-
+        // GET: api/utility/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Utility>> GetUtilityById(int id)
+        public async Task<ActionResult<Utility>> GetUtility(int id)
         {
             var utility = await _unitOfWork.UtilityRepository.GetByIdAsync(id);
 
@@ -31,26 +33,66 @@ namespace APIInANutShell.Controllers
 
             return utility;
         }
-
+        // POST: api/utility
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
-        public async Task<ActionResult> CreateSlot(UtilityDTO slot)
+        public async Task<ActionResult<Utility>> PostUtility(UtilityRequest utilityRequest)
         {
-            var newUtility = new Utility
+            var utility = new Utility
             {
-               Id = slot.Id,
-               Name = slot.Name,
-               Image = slot.Image,
-               Description = slot.Description,
+                Id = utilityRequest.Id,
+                Name = utilityRequest.Name,
+                Description = utilityRequest.Description,
+                Image = utilityRequest.Image,
+
             };
+            try
+            {
+                await _unitOfWork.UtilityRepository.CreateAsync(utility);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
 
-            await _unitOfWork.UtilityRepository.CreateAsync(newUtility);
-            await _unitOfWork.UtilityRepository.SaveAsync();
-
-            return CreatedAtAction(nameof(GetUtilityById), new { id = slot.Id }, slot);
+            }
+            return CreatedAtAction("GetUtility", new { id = utility.Id }, utility);
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutUtility(int id, UtilityRequest utilityRequest)
+        {
+            // Kiểm tra sản phẩm có tồn tại hay không
+            var utility = await _unitOfWork.UtilityRepository.GetByIdAsync(id);
+            if (utility == null)
+            {
+                return NotFound("Sản phẩm không tồn tại.");
+            }
 
+            utility.Name = utilityRequest.Name;
+            utility.Description = utilityRequest.Description;
+            utility.Image = utilityRequest.Image;
+
+
+
+            try
+            {
+                await _unitOfWork.UtilityRepository.UpdateAsync(utility);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!UtilityExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        // DELETE: api/utility/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUtilityById(int id)
+        public async Task<IActionResult> DeleteUtility(int id)
         {
             var utility = await _unitOfWork.UtilityRepository.GetByIdAsync(id);
             if (utility == null)
@@ -58,23 +100,13 @@ namespace APIInANutShell.Controllers
                 return NotFound();
             }
 
-            var result = await _unitOfWork.UtilityRepository.RemoveAsync(utility);
-            if (result)
-            {
-                return NoContent();
-            }
+            await _unitOfWork.UtilityRepository.RemoveAsync(utility);
 
-            return StatusCode(500, "Có lỗi xảy ra khi xóa Utility.");
+            return NoContent();
         }
-        public class UtilityDTO
+        private bool UtilityExists(int id)
         {
-            public int Id { get; set; }
-
-            public string? Name { get; set; }
-
-            public string? Image { get; set; }
-
-            public string? Description { get; set; }
+            return _unitOfWork.UtilityRepository.GetByIdAsync(id) != null;
         }
     }
 }

@@ -1,27 +1,30 @@
-﻿using LibraryInANutShell.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PB.APIService.ModelRequest;
+using LibraryInANutShell.Models;
 using LibraryInANutShell;
-using Microsoft.AspNetCore.Mvc;
-using static APIInANutShell.Controllers.StoreController;
 using Type = LibraryInANutShell.Models.Type;
+using LibraryInANutShell;
+using PB.APIService.ModelRequest;
 
-namespace APIInANutShell.Controllers
+namespace PB.APIService.Controllers
 {
-    [Route("api/[Controller]")]
+    [Route("api/[controller]")]
     [ApiController]
-
     public class TypeController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
         public TypeController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
 
+        // GET: api/Type
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<LibraryInANutShell.Models.Type>>> GetType()
+        public async Task<ActionResult<IEnumerable<Type>>> GetType()
         {
             return await _unitOfWork.TypeRepository.GetAllAsync();
         }
-
+        // GET: api/Type/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<LibraryInANutShell.Models.Type>> GetTypeById(int id)
+        public async Task<ActionResult<Type>> GetType(int id)
         {
             var type = await _unitOfWork.TypeRepository.GetByIdAsync(id);
 
@@ -32,25 +35,62 @@ namespace APIInANutShell.Controllers
 
             return type;
         }
-
+        // POST: api/Type
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
-        public async Task<ActionResult> CreateSlot(TypeDTO slot)
+        public async Task<ActionResult<Type>> PostType(TypeRequest typeRequest)
         {
-            var newStore = new Type
+            var type = new Type
             {
-                Id = slot.Id,
-                Name = slot.Name,
-                Capacity = slot.Capacity,
+                Id = typeRequest.Id,
+                Name = typeRequest.Name,
+                Capacity = typeRequest.Capacity,
+
             };
+            try
+            {
+                await _unitOfWork.TypeRepository.CreateAsync(type);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
 
-            await _unitOfWork.TypeRepository.CreateAsync(newStore);
-            await _unitOfWork.TypeRepository.SaveAsync();
-
-            return CreatedAtAction(nameof(GetTypeById), new { id = slot.Id }, slot);
+            }
+            return CreatedAtAction("GeType", new { id = type.Id }, type);
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutType(int id, TypeRequest typeRequest)
+        {
+            // Kiểm tra sản phẩm có tồn tại hay không
+            var type = await _unitOfWork.TypeRepository.GetByIdAsync(id);
+            if (type == null)
+            {
+                return NotFound("Sản phẩm không tồn tại.");
+            }
 
+            type.Name = typeRequest.Name;
+            type.Capacity = typeRequest.Capacity;
+
+            try
+            {
+                await _unitOfWork.TypeRepository.UpdateAsync(type);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!TypeExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        // DELETE: api/Type/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTypeById(int id)
+        public async Task<IActionResult> DeleteType(int id)
         {
             var type = await _unitOfWork.TypeRepository.GetByIdAsync(id);
             if (type == null)
@@ -58,22 +98,13 @@ namespace APIInANutShell.Controllers
                 return NotFound();
             }
 
-            var result = await _unitOfWork.TypeRepository.RemoveAsync(type);
-            if (result)
-            {
-                return NoContent();
-            }
+            await _unitOfWork.TypeRepository.RemoveAsync(type);
 
-            return StatusCode(500, "Có lỗi xảy ra khi xóa Type.");
+            return NoContent();
         }
-        public class TypeDTO
+        private bool TypeExists(int id)
         {
-            public int Id { get; set; }
-
-            public string? Name { get; set; }
-
-            public int? Capacity { get; set; }
+            return _unitOfWork.TypeRepository.GetByIdAsync(id) != null;
         }
-
     }
 }

@@ -1,25 +1,29 @@
-﻿using LibraryInANutShell.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PB.APIService.ModelRequest;
+using LibraryInANutShell.Models;
 using LibraryInANutShell;
-using Microsoft.AspNetCore.Mvc;
+using LibraryInANutShell.Models;
+using LibraryInANutShell;
+using PB.APIService.ModelRequest;
 
-namespace APIInANutShell.Controllers
+namespace PB.APIService.Controllers
 {
-    [Route("api/[Controller]")]
+    [Route("api/[controller]")]
     [ApiController]
-
     public class SlotController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
         public SlotController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
-
+        // GET: api/Slot
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Slot>>> GetSlot()
         {
             return await _unitOfWork.SlotRepository.GetAllAsync();
         }
-
+        // GET: api/Pod/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Slot>> GetSlotById(int id)
+        public async Task<ActionResult<Slot>> GetSlot(int id)
         {
             var slot = await _unitOfWork.SlotRepository.GetByIdAsync(id);
 
@@ -30,29 +34,75 @@ namespace APIInANutShell.Controllers
 
             return slot;
         }
-
+        // POST: api/Slot
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
-        public async Task<ActionResult> CreateSlot(SlotDTO slot)
+        public async Task<ActionResult<Slot>> PostSlot(SlotRequest slotRequest)
         {
-            var newslot = new Slot
+            var slot = new Slot
             {
-                Id = slot.Id,
-                Name = slot.Name,
-                StartTime = slot.StartTime,
-                EndTime = slot.EndTime,
-                Price = slot.Price,
-                Status = slot.Status,
-                PodId = slot.PodId,
+                Id = slotRequest.Id,
+                Name = slotRequest.Name,
+                StartTime = slotRequest.StartTime,
+                EndTime = slotRequest.EndTime,
+                Price = slotRequest.Price,
+                Status = slotRequest.Status,
+                PodId = slotRequest.PodId,
+
+
+
+
             };
+            try
+            {
+                await _unitOfWork.SlotRepository.CreateAsync(slot);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
 
-            await _unitOfWork.SlotRepository.CreateAsync(newslot);
-            await _unitOfWork.SlotRepository.SaveAsync();
-
-            return CreatedAtAction(nameof(GetSlotById), new { id = slot.Id }, slot);
+            }
+            return CreatedAtAction("GetSlot", new { id = slot.Id }, slot);
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutSlot(int id, SlotRequest slotRequest)
+        {
+            // Kiểm tra sản phẩm có tồn tại hay không
+            var slot = await _unitOfWork.SlotRepository.GetByIdAsync(id);
+            if (slot == null)
+            {
+                return NotFound("Sản phẩm không tồn tại.");
+            }
 
+            slot.Name = slotRequest.Name;
+            slot.StartTime = slotRequest.StartTime;
+            slot.EndTime = slotRequest.EndTime;
+            slot.Price = slotRequest.Price;
+            slot.Status = slotRequest.Status;
+            slot.PodId = slotRequest.PodId;
+
+
+
+            try
+            {
+                await _unitOfWork.SlotRepository.UpdateAsync(slot);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!SlotExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        // DELETE: api/Slot/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteSlotById(int id)
+        public async Task<IActionResult> DeleteSlot(int id)
         {
             var slot = await _unitOfWork.SlotRepository.GetByIdAsync(id);
             if (slot == null)
@@ -60,31 +110,13 @@ namespace APIInANutShell.Controllers
                 return NotFound();
             }
 
-            var result = await _unitOfWork.SlotRepository.RemoveAsync(slot);
-            if (result)
-            {
-                return NoContent();
-            }
+            await _unitOfWork.SlotRepository.RemoveAsync(slot);
 
-            return StatusCode(500, "Có lỗi xảy ra khi xóa Slot.");
+            return NoContent();
         }
-        public class SlotDTO
+        private bool SlotExists(int id)
         {
-            public int Id { get; set; }
-
-            public string? Name { get; set; }
-
-            public int? StartTime { get; set; }
-
-            public int? EndTime { get; set; }
-
-            public int? Price { get; set; }
-
-            public string? Status { get; set; }
-
-            public int PodId { get; set; }
-
+            return _unitOfWork.SlotRepository.GetByIdAsync(id) != null;
         }
-
     }
 }

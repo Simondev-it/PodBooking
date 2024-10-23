@@ -1,26 +1,28 @@
-﻿using LibraryInANutShell.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PB.APIService.ModelRequest;
+using LibraryInANutShell.Models;
+using LibraryInANutShell.Models;
 using LibraryInANutShell;
-using Microsoft.AspNetCore.Mvc;
-using static APIInANutShell.Controllers.SlotController;
+using PB.APIService.ModelRequest;
 
-namespace APIInANutShell.Controllers
+namespace PB.APIService.Controllers
 {
-    [Route("api/[Controller]")]
+    [Route("api/[controller]")]
     [ApiController]
-
     public class StoreController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
         public StoreController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
-
+        // GET: api/Store
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Store>>> GetStore()
         {
             return await _unitOfWork.StoreRepository.GetAllAsync();
         }
-
+        // GET: api/Store/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Store>> GetStoreById(int id)
+        public async Task<ActionResult<Store>> GetStore(int id)
         {
             var store = await _unitOfWork.StoreRepository.GetByIdAsync(id);
 
@@ -31,26 +33,64 @@ namespace APIInANutShell.Controllers
 
             return store;
         }
-
+        // POST: api/store
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
-        public async Task<ActionResult> CreateSlot(StoreDTO slot)
+        public async Task<ActionResult<Store>> PostStore(StoreRequest storeRequest)
         {
-            var newStore = new Store
+            var store = new Store
             {
-                Id = slot.Id,
-                Name = slot.Name,
-                Address = slot.Address,
-                Contact = slot.Contact,
+                Id = storeRequest.Id,
+                Name = storeRequest.Name,
+                Address = storeRequest.Address,
+                Contact = storeRequest.Contact,
+
             };
+            try
+            {
+                await _unitOfWork.StoreRepository.CreateAsync(store);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
 
-            await _unitOfWork.StoreRepository.CreateAsync(newStore);
-            await _unitOfWork.StoreRepository.SaveAsync();
-
-            return CreatedAtAction(nameof(GetStoreById), new { id = slot.Id }, slot);
+            }
+            return CreatedAtAction("GetStore", new { id = store.Id }, store);
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutStore(int id, StoreRequest storeRequest)
+        {
+            // Kiểm tra sản phẩm có tồn tại hay không
+            var store = await _unitOfWork.StoreRepository.GetByIdAsync(id);
+            if (store == null)
+            {
+                return NotFound("Sản phẩm không tồn tại.");
+            }
 
+            store.Name = storeRequest.Name;
+            store.Address = storeRequest.Address;
+            store.Contact = storeRequest.Contact;
+
+            try
+            {
+                await _unitOfWork.StoreRepository.UpdateAsync(store);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!StoreExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        // DELETE: api/Store/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteStoreById(int id)
+        public async Task<IActionResult> DeleteStore(int id)
         {
             var store = await _unitOfWork.StoreRepository.GetByIdAsync(id);
             if (store == null)
@@ -58,24 +98,13 @@ namespace APIInANutShell.Controllers
                 return NotFound();
             }
 
-            var result = await _unitOfWork.StoreRepository.RemoveAsync(store);
-            if (result)
-            {
-                return NoContent();
-            }
+            await _unitOfWork.StoreRepository.RemoveAsync(store);
 
-            return StatusCode(500, "Có lỗi xảy ra khi xóa Store.");
+            return NoContent();
         }
-
-        public class StoreDTO
+        private bool StoreExists(int id)
         {
-            public int Id { get; set; }
-
-            public string? Name { get; set; }
-
-            public string? Address { get; set; }
-
-            public string? Contact { get; set; }
+            return _unitOfWork.StoreRepository.GetByIdAsync(id) != null;
         }
     }
 }

@@ -1,29 +1,29 @@
-﻿
-
-using LibraryInANutShell.Models;
+﻿using LibraryInANutShell.Models;
 using LibraryInANutShell;
 using Microsoft.AspNetCore.Mvc;
-using static APIInANutShell.Controllers.BookingOrderController;
+using Microsoft.EntityFrameworkCore;
+using PB.APIService.ModelRequest;
+using PB.APIService.ModelRequest;
+using LibraryInANutShell;
+using LibraryInANutShell.Models;
 
-namespace APIInANutShell.Controllers
+namespace PB.APIService.Controllers
 {
-    [Route("api/[Controller]")]
+    [Route("api/[controller]")]
     [ApiController]
     public class CategoryController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
-
         public CategoryController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
-
-
+        // GET: api/Category
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Category>>> GetCategory()
+        public async Task<ActionResult<IEnumerable<Category>>> GetBookingOrder()
         {
             return await _unitOfWork.CategoryRepository.GetAllAsync();
         }
-
+        // GET: api/Category/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Category>> GetCategoryById(int id)
+        public async Task<ActionResult<Category>> GetCategory(int id)
         {
             var category = await _unitOfWork.CategoryRepository.GetByIdAsync(id);
 
@@ -34,49 +34,77 @@ namespace APIInANutShell.Controllers
 
             return category;
         }
-
+        // POST: api/Category
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
-        public async Task<ActionResult> CreateCategory(CategoryDTO slot)
+        public async Task<ActionResult<Category>> PostCategory(CategoryRequest categoryRequest)
         {
-            var newCategory = new Category
+            var category = new Category
             {
-                Id = slot.Id,
-                Name = slot.Name,
-                Status = slot.Status,
+                Id = categoryRequest.Id,
+                Name = categoryRequest.Name,
+                Status = categoryRequest.Status,
 
             };
+            try
+            {
+                await _unitOfWork.CategoryRepository.CreateAsync(category);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
 
-            await _unitOfWork.CategoryRepository.CreateAsync(newCategory);
-            await _unitOfWork.CategoryRepository.SaveAsync();
-
-            return CreatedAtAction(nameof(GetCategoryById), new { id = slot.Id }, slot);
+            }
+            return CreatedAtAction("GetCategory", new { id = category.Id }, category);
         }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCategoryById(int id)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutCategory(int id, CategoryRequest categoryRequest)
         {
+            // Kiểm tra sản phẩm có tồn tại hay không
             var category = await _unitOfWork.CategoryRepository.GetByIdAsync(id);
             if (category == null)
+            {
+                return NotFound("Sản phẩm không tồn tại.");
+            }
+
+            category.Name = categoryRequest.Name;
+            category.Status = categoryRequest.Status;
+
+
+            try
+            {
+                await _unitOfWork.CategoryRepository.UpdateAsync(category);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!CategoryExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        // DELETE: api/Category/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCategory(int id)
+        {
+            var catecory = await _unitOfWork.CategoryRepository.GetByIdAsync(id);
+            if (catecory == null)
             {
                 return NotFound();
             }
 
-            var result = await _unitOfWork.CategoryRepository.RemoveAsync(category);
-            if (result)
-            {
-                return NoContent();
-            }
+            await _unitOfWork.CategoryRepository.RemoveAsync(catecory);
 
-            return StatusCode(500, "Có lỗi xảy ra khi xóa Category.");
+            return NoContent();
         }
-        public class CategoryDTO
+        private bool CategoryExists(int id)
         {
-            public int Id { get; set; }
-
-            public string? Name { get; set; }
-
-            public string? Status { get; set; }
-
+            return _unitOfWork.CategoryRepository.GetByIdAsync(id) != null;
         }
     }
 }

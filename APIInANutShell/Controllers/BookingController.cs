@@ -1,27 +1,30 @@
-﻿using LibraryInANutShell;
-using LibraryInANutShell.Models;
-using LibraryInANutShell.Repositories;
+﻿using LibraryInANutShell.Models;
+using LibraryInANutShell;
 using Microsoft.AspNetCore.Mvc;
-using static APIInANutShell.Controllers.SlotController;
+using Microsoft.EntityFrameworkCore;
+using PB.APIService.ModelRequest;
+using PB.APIService.ModelRequest;
+using LibraryInANutShell;
+using LibraryInANutShell.Models;
 
-namespace APIInANutShell.Controllers
+namespace PB.APIService.Controllers
 {
-    [Route("api/[Controller]")]
+    [Route("api/[controller]")]
     [ApiController]
-
     public class BookingController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
         public BookingController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
 
+        // GET: api/Booking
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Booking>>> GetBooking()
         {
             return await _unitOfWork.BookingRepository.GetAllAsync();
         }
-
+        // GET: api/Booking/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Booking>> GetBookingById(int id)
+        public async Task<ActionResult<Booking>> GetBooking(int id)
         {
             var booking = await _unitOfWork.BookingRepository.GetByIdAsync(id);
 
@@ -32,29 +35,69 @@ namespace APIInANutShell.Controllers
 
             return booking;
         }
-
+        // POST: api/Products
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
-        public async Task<ActionResult> CreateBooking(BookingDTO slot)
+        public async Task<ActionResult<Booking>> PostBooking(BookingRequest bookingRequest)
         {
-            var newBooking = new Booking
+            var booking = new Booking
             {
-                Id = slot.Id,
-                Feedback = slot.Feedback,
-                Date = slot.Date,
-                Status = slot.Status,
-                PodId = slot.PodId,
-                UserId = slot.UserId,
+                Id = bookingRequest.Id,
+                Date = bookingRequest.Date,
+                Status = bookingRequest.Status,
+                Feedback = bookingRequest.Feedback,
+                PodId = bookingRequest.PodId,
+                UserId = bookingRequest.UserId,
+
+
 
             };
+            try
+            {
+                await _unitOfWork.BookingRepository.CreateAsync(booking);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
 
-            await _unitOfWork.BookingRepository.CreateAsync(newBooking);
-            await _unitOfWork.BookingRepository.SaveAsync();
-
-            return CreatedAtAction(nameof(GetBookingById), new { id = slot.Id }, slot);
+            }
+            return CreatedAtAction("GetBooking", new { id = booking.Id }, booking);
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutBooking(int id, BookingRequest bookingRequest)
+        {
+            // Kiểm tra sản phẩm có tồn tại hay không
+            var booking = await _unitOfWork.BookingRepository.GetByIdAsync(id);
+            if (booking == null)
+            {
+                return NotFound("Sản phẩm không tồn tại.");
+            }
 
+            booking.Date = bookingRequest.Date;
+            booking.Status = bookingRequest.Status;
+            booking.PodId = bookingRequest.PodId;
+            booking.Feedback = bookingRequest.Feedback;
+            booking.UserId = bookingRequest.UserId;
+            try
+            {
+                await _unitOfWork.BookingRepository.UpdateAsync(booking);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!BookingExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        // DELETE: api/Booking/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteBookingById(int id)
+        public async Task<IActionResult> DeleteBooking(int id)
         {
             var booking = await _unitOfWork.BookingRepository.GetByIdAsync(id);
             if (booking == null)
@@ -62,28 +105,13 @@ namespace APIInANutShell.Controllers
                 return NotFound();
             }
 
-            var result = await _unitOfWork.BookingRepository.RemoveAsync(booking);
-            if (result)
-            {
-                return NoContent();
-            }
+            await _unitOfWork.BookingRepository.RemoveAsync(booking);
 
-            return StatusCode(500, "Có lỗi xảy ra khi xóa booking.");
+            return NoContent();
         }
-        public class BookingDTO
+        private bool BookingExists(int id)
         {
-            public int Id { get; set; }
-
-            public DateOnly? Date { get; set; }
-
-            public string? Status { get; set; }
-
-            public string? Feedback { get; set; }
-
-            public int PodId { get; set; }
-
-            public int UserId { get; set; }
-
+            return _unitOfWork.BookingRepository.GetByIdAsync(id) != null;
         }
     }
 }

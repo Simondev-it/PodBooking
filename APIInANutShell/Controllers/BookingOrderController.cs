@@ -1,27 +1,30 @@
-﻿using LibraryInANutShell;
-using LibraryInANutShell.Models;
+﻿using LibraryInANutShell.Models;
+using LibraryInANutShell;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PB.APIService.ModelRequest;
+using PB.APIService.ModelRequest;
+using LibraryInANutShell;
+using LibraryInANutShell.Models;
 
-namespace APIInANutShell.Controllers
+namespace PB.APIService.Controllers
 {
-    [Route("api/[Controller]")]
+    [Route("api/[controller]")]
     [ApiController]
-
     public class BookingOrderController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
-
         public BookingOrderController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
 
+        // GET: api/BookingOrder
         [HttpGet]
         public async Task<ActionResult<IEnumerable<BookingOrder>>> GetBookingOrder()
         {
             return await _unitOfWork.BookingOrderRepository.GetAllAsync();
         }
-
-
+        // GET: api/BookingOrder/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<BookingOrder>> GetBookingOrderById(int id)
+        public async Task<ActionResult<BookingOrder>> GetBookingOder(int id)
         {
             var bookingOrder = await _unitOfWork.BookingOrderRepository.GetByIdAsync(id);
 
@@ -32,61 +35,88 @@ namespace APIInANutShell.Controllers
 
             return bookingOrder;
         }
-
+        // POST: api/Products
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
-        public async Task<ActionResult> CreateBookingOrder(BookingOrderDTO slot)
+        public async Task<ActionResult<BookingOrder>> PostBookingOrder(BookingOrderRequest bookingOrderRequest)
         {
-            var newBookingOrder = new BookingOrder
+            var bookingOder = new BookingOrder
             {
-                Id = slot.Id,
-                Amount = slot.Amount,
-                Quantity = slot.Quantity,
-                Status = slot.Status,
-                Date = slot.Date,
-                BookingId = slot.BookingId,
-                ProductId = slot.ProductId,
+                Id = bookingOrderRequest.Id,
+                Amount = bookingOrderRequest.Amount,
+                Quantity = bookingOrderRequest.Quantity,
+                Status = bookingOrderRequest.Status,
+                Date = bookingOrderRequest.Date,
+                BookingId = bookingOrderRequest.BookingId,
+                ProductId = bookingOrderRequest.ProductId,
+
+
 
             };
+            try
+            {
+                await _unitOfWork.BookingOrderRepository.CreateAsync(bookingOder);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
 
-            await _unitOfWork.BookingOrderRepository.CreateAsync(newBookingOrder);
-            await _unitOfWork.BookingOrderRepository.SaveAsync();
-
-            return CreatedAtAction(nameof(GetBookingOrderById), new { id = slot.Id }, slot);
+            }
+            return CreatedAtAction("GetBookingOrder", new { id = bookingOder.Id }, bookingOder);
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutBookingOder(int id, BookingOrderRequest bookingOderRequest)
+        {
+            // Kiểm tra sản phẩm có tồn tại hay không
+            var bookingOrder = await _unitOfWork.BookingOrderRepository.GetByIdAsync(id);
+            if (bookingOrder == null)
+            {
+                return NotFound("Sản phẩm không tồn tại.");
+            }
 
+            bookingOrder.Amount = bookingOderRequest.Amount;
+            bookingOrder.Quantity = bookingOderRequest.Quantity;
+            bookingOrder.Status = bookingOderRequest.Status;
+            bookingOrder.Date = bookingOderRequest.Date;
+            bookingOrder.BookingId = bookingOderRequest.BookingId;
+            bookingOrder.ProductId = bookingOderRequest.ProductId;
+
+            try
+            {
+                await _unitOfWork.BookingOrderRepository.UpdateAsync(bookingOrder);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!BookingOrderExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        // DELETE: api/Booking/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteBookingOrderById(int id)
+        public async Task<IActionResult> DeleteBookingOrder(int id)
         {
             var bookingOrder = await _unitOfWork.BookingOrderRepository.GetByIdAsync(id);
             if (bookingOrder == null)
             {
-                return NotFound(); 
+                return NotFound();
             }
 
-            var result = await _unitOfWork.BookingOrderRepository.RemoveAsync(bookingOrder);
-            if (result)
-            {
-                return NoContent(); 
-            }
+            await _unitOfWork.BookingOrderRepository.RemoveAsync(bookingOrder);
 
-            return StatusCode(500, "Có lỗi xảy ra khi xóa bookingOrder."); 
+            return NoContent();
         }
-
-        public class BookingOrderDTO
+        private bool BookingOrderExists(int id)
         {
-            public int Id { get; set; }
-
-            public int? Amount { get; set; }
-
-            public int? Quantity { get; set; }
-
-            public string? Status { get; set; }
-
-            public DateOnly? Date { get; set; }
-
-            public int BookingId { get; set; }
-
-            public int ProductId { get; set; }
+            return _unitOfWork.BookingOrderRepository.GetByIdAsync(id) != null;
         }
     }
 }
+
+

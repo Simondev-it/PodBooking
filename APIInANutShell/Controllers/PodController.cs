@@ -1,26 +1,30 @@
-﻿using LibraryInANutShell;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PB.APIService.ModelRequest;
 using LibraryInANutShell.Models;
-using Microsoft.AspNetCore.Mvc;
-using static APIInANutShell.Controllers.PaymentController;
+using LibraryInANutShell;
+using LibraryInANutShell.Repositories;
+using LibraryInANutShell.Models;
+using LibraryInANutShell;
+using PB.APIService.ModelRequest;
 
-namespace APIInANutShell.Controllers
+namespace PB.APIService.Controllers
 {
-    [Route("api/[Controller]")]
+    [Route("api/[controller]")]
     [ApiController]
-
     public class PodController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
         public PodController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
-
+        // GET: api/Pod
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Pod>>> GetPod()
         {
             return await _unitOfWork.PodRepository.GetAllAsync();
         }
-
+        // GET: api/Pod/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Pod>> GetPodById(int id)
+        public async Task<ActionResult<Pod>> GetPod(int id)
         {
             var pod = await _unitOfWork.PodRepository.GetByIdAsync(id);
 
@@ -31,30 +35,74 @@ namespace APIInANutShell.Controllers
 
             return pod;
         }
-
+        // POST: api/Pod
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
-        public async Task<ActionResult> CreatePod(PodDTO slot)
+        public async Task<ActionResult<Pod>> PostPod(PodRequest podRequest)
         {
-            var newPod = new Pod
+            var pod = new Pod
             {
-                Id = slot.Id,
-                Name = slot.Name,
-                Image = slot.Image,
-                Description = slot.Description,
-                Rating = slot.Rating,
-                Status = slot.Status,
-                TypeId = slot.TypeId,
-                StoreId = slot.StoreId,
+                Id = podRequest.Id,
+                Name = podRequest.Name,
+                Image = podRequest.Image,
+                Description = podRequest.Description,
+                Rating = podRequest.Rating,
+                Status = podRequest.Status,
+                TypeId = podRequest.TypeId,
+                StoreId = podRequest.StoreId,
+
+
             };
+            try
+            {
+                await _unitOfWork.PodRepository.CreateAsync(pod);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
 
-            await _unitOfWork.PodRepository.CreateAsync(newPod);
-            await _unitOfWork.PodRepository.SaveAsync();
-
-            return CreatedAtAction(nameof(GetPodById), new { id = slot.Id }, slot);
+            }
+            return CreatedAtAction("GetPod", new { id = pod.Id }, pod);
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutPod(int id, PodRequest podRequest)
+        {
+            // Kiểm tra sản phẩm có tồn tại hay không
+            var pod = await _unitOfWork.PodRepository.GetByIdAsync(id);
+            if (pod == null)
+            {
+                return NotFound("Sản phẩm không tồn tại.");
+            }
 
+            pod.Name = podRequest.Name;
+            pod.Image = podRequest.Image;
+            pod.Description = podRequest.Description;
+            pod.Rating = podRequest.Rating;
+            pod.Status = podRequest.Status;
+            pod.TypeId = podRequest.TypeId;
+            pod.StoreId = podRequest.StoreId;
+
+
+            try
+            {
+                await _unitOfWork.PodRepository.UpdateAsync(pod);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!PodExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        // DELETE: api/Pod/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePodById(int id)
+        public async Task<IActionResult> DeletePod(int id)
         {
             var pod = await _unitOfWork.PodRepository.GetByIdAsync(id);
             if (pod == null)
@@ -62,32 +110,13 @@ namespace APIInANutShell.Controllers
                 return NotFound();
             }
 
-            var result = await _unitOfWork.PodRepository.RemoveAsync(pod);
-            if (result)
-            {
-                return NoContent();
-            }
+            await _unitOfWork.PodRepository.RemoveAsync(pod);
 
-            return StatusCode(500, "Có lỗi xảy ra khi xóa Category.");
+            return NoContent();
         }
-
-        public class PodDTO
+        private bool PodExists(int id)
         {
-            public int Id { get; set; }
-
-            public string? Name { get; set; }
-
-            public string? Image { get; set; }
-
-            public string? Description { get; set; }
-
-            public int? Rating { get; set; }
-
-            public string? Status { get; set; }
-
-            public int TypeId { get; set; }
-
-            public int StoreId { get; set; }
+            return _unitOfWork.PodRepository.GetByIdAsync(id) != null;
         }
 
     }
