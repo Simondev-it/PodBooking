@@ -2,6 +2,7 @@
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PB.APIService.RequestModel;
+using PB.APIService.Services;
 using PodBooking.SWP391;
 using System.Security.Claims;
 using System.Text;
@@ -54,6 +55,7 @@ namespace PB.APIService
                     }
                 };
             });
+
 
             // Configure authorization policies
             builder.Services.AddAuthorization(options =>
@@ -109,9 +111,9 @@ namespace PB.APIService
                          new string[] {}
                      }
                       });
-                   });
+            });
 
-
+            builder.Services.AddSingleton<IVnpayService, VnPayService>();
             var app = builder.Build();
 
             // Middleware configuration

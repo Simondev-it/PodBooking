@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PB.APIService.RequestModel;
+using PB.APIService.Services;
 using PodBooking.SWP391;
 using PodBooking.SWP391.Models;
 
@@ -11,7 +12,13 @@ namespace PB.APIService.Controllers
     public class PaymentController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
-        public PaymentController(UnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
+        private readonly IVnpayService _vpnpayService;
+        public PaymentController(UnitOfWork unitOfWork, IVnpayService vnpayService)
+        { 
+            _unitOfWork = unitOfWork;
+            _vpnpayService = vnpayService;
+
+        }
         // GET: api/Payment
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Payment>>> GetPayment()
@@ -110,6 +117,23 @@ namespace PB.APIService.Controllers
         {
             return _unitOfWork.PaymentRepository.GetByIdAsync(id) != null;
         }
+        //public IActionResult PaymentCallBack()
+        //{
+        //    return View();
+        //}
 
+        [HttpPost("create")]
+        public IActionResult CreatePayment([FromBody] VnPaymentRequestModel model)
+        {
+            if (model == null)
+            {
+                return BadRequest("Request cannot be null.");
+            }
+
+            // Tạo URL thanh toán
+            var paymentUrl = _vpnpayService.CreatePaymentUrl(HttpContext, model);
+
+            return Ok(new { PaymentUrl = paymentUrl });
+        }
     }
 }
