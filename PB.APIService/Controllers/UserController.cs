@@ -21,7 +21,8 @@ namespace PB.APIService.Controllers
             return await _unitOfWork.UserRepository.GetAllAsync();
         }
         // GET: api/User/5
-        [HttpGet("{id}")]
+        [HttpGet("GetUser/{userId}")]
+
         public async Task<ActionResult<User>> GetUser(int id)
         {
             var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
@@ -33,6 +34,28 @@ namespace PB.APIService.Controllers
 
             return user;
         }
+        [HttpGet("GetUserByEmail/{email}")]
+        public async Task<ActionResult> GetUserByEmail(string email)
+        {
+            var user = await _unitOfWork.UserRepository.GetByEmailAsync(email);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Trả về một đối tượng chỉ chứa các thông tin cần thiết
+            var result = new
+            {
+                UserId = user.Id,
+                Name= user.Name,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber
+            };
+
+            return Ok(result);
+        }
+
         // POST: api/User
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]

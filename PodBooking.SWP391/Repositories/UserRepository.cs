@@ -23,6 +23,12 @@ namespace PodBooking.SWP391.Repositories
 
             return result;
         }
+        public async Task<User> GetByEmailAsync(string email)
+        {
+            var result = await _context.Users.Include(p => p.Bookings).FirstAsync(p => p.Email == email);
+
+            return result;
+        }
         public User GetUserByUsername(string username)
         {
             return _context.Users.FirstOrDefault(u => u.Email == username); // Điều chỉnh theo trường thực tế
