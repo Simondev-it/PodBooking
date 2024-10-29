@@ -4,6 +4,7 @@ using PB.APIService.RequestModel;
 using PB.APIService.Services;
 using PodBooking.SWP391;
 using PodBooking.SWP391.Models;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PB.APIService.Controllers
 {
@@ -135,5 +136,23 @@ namespace PB.APIService.Controllers
 
             return Ok(new { PaymentUrl = paymentUrl });
         }
+
+        [HttpGet("payment-callback")]
+        public IActionResult PaymentCallBack()
+        {
+            var response = _vpnpayService.PaymentExecute(Request.Query);
+
+            if (response == null)
+                return BadRequest(new { Message = "Phản hồi VNPay không hợp lệ." });
+
+            if (response.VnPayResponsecode != "00")
+                return BadRequest(new { Message = $"Lỗi thanh toán VNPay: {response.VnPayResponsecode}" });
+
+           
+
+            return Ok(new { Message = "Thanh toán VNPay thành công" });
+        }
+
+
     }
 }
