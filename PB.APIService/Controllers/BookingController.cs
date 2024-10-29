@@ -66,6 +66,8 @@ namespace PB.APIService.Controllers
                 Date = bookingRequest.Date,
                 Status = bookingRequest.Status,
                 Feedback = bookingRequest.Feedback,
+                CurrentDate = bookingRequest.CurrentDate,
+                Rating = bookingRequest.Rating,
                 PodId = bookingRequest.PodId,
                 UserId = bookingRequest.UserId,
                 Slots = slots // Gán danh sách slots đã tìm thấy vào booking
@@ -86,6 +88,8 @@ namespace PB.APIService.Controllers
             {
                 Id = booking.Id,
                 Date = (DateTime)booking.Date,
+                CurrentDate= booking.CurrentDate,
+                Rating= booking.Rating,
                 Status = booking.Status,
                 Feedback = booking.Feedback,
                 PodId = booking.PodId,
@@ -97,7 +101,7 @@ namespace PB.APIService.Controllers
             return CreatedAtAction(nameof(GetBooking), new { id = bookingDTO.Id }, bookingDTO);
         }
 
-
+        //StrongP@ssw0rd
 
 
 
@@ -112,6 +116,8 @@ namespace PB.APIService.Controllers
             }
 
             booking.Date = bookingRequest.Date;
+            booking.Rating = bookingRequest.Rating;
+            booking.CurrentDate = bookingRequest.CurrentDate;
             booking.Status = bookingRequest.Status;
             booking.PodId = bookingRequest.PodId;
             booking.Feedback = bookingRequest.Feedback;

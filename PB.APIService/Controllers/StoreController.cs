@@ -40,6 +40,7 @@ namespace PB.APIService.Controllers
             {
                 Id = storeRequest.Id,
                 Name = storeRequest.Name,
+                Status = storeRequest.Status,
                 Address = storeRequest.Address,
                 Contact = storeRequest.Contact,
                 
@@ -67,6 +68,7 @@ namespace PB.APIService.Controllers
             store.Name = storeRequest.Name;
             store.Address = storeRequest.Address;
             store.Contact = storeRequest.Contact;
+            store.Status = storeRequest.Status;
             
             try
             {

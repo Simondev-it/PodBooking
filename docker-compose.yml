@@ -6,7 +6,7 @@ services:
     container_name: sqlpreview
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_sa_PASSWORD=12345
+      - MSSQL_SA_PASSWORD=StrongP@ssw0rd
       - MSSQL_PID=Evaluation
     ports:
       - "1433:1433"
@@ -18,13 +18,13 @@ services:
 
   productmanagementapi:
     build:
-      context: .
+      context: ./PodBooking
       dockerfile: Dockerfile
     container_name: productmanagementapi
     depends_on:
       - sqlserver
     environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlpreview;Database=SWP391;User Id=sa;Password=12345;TrustServerCertificate=True;
+      - ConnectionStrings__DefaultConnection=Server=sqlpreview;Database=SWP391;User Id=sa;Password=StrongP@ssw0rd;TrustServerCertificate=True;
     ports:
       - "8888:8080"
     networks:
@@ -33,3 +33,5 @@ services:
 networks:
   my_network:
     driver: bridge
+
+    
