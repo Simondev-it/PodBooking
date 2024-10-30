@@ -7,7 +7,7 @@ namespace PB.APIService.Services
         private readonly IConfiguration _config;
         public VnPayService(IConfiguration config)
         {
-            _config = config ;
+            _config = config ; 
         }
         public string CreatePaymentUrl(HttpContext context, VnPaymentRequestModel model)
         {
@@ -27,7 +27,7 @@ namespace PB.APIService.Services
             vnpay.AddRequestData("vnp_OrderType", "other"); //default value: other
             vnpay.AddRequestData("vnp_ReturnUrl", _config["VnPay:PaymentBackReturnUrl"]);
 
-            vnpay.AddRequestData("vnp_TxnRef", tick); // Mã tham chiếu của giao dịch tại hệ thống của merchant. Mã này là duy nhất dùng để phân biệt các đơn hàng gửi sang VNPAY. Không được trùng lặp trong ngày
+            vnpay.AddRequestData("vnp_TxnRef", model.OrderId.ToString());
 
             var paymentUrl = vnpay.CreateRequestUrl(_config["VnPay:BaseUrl"], _config["VnPay:HashSecret"]);
 
@@ -45,8 +45,20 @@ namespace PB.APIService.Services
                 }
             }
 
-            var vnp_orderId = Convert.ToInt64(vnpay.GetResponseData("vnp_TxnRef"));
-            var vnp_TransactionId = Convert.ToInt64(vnpay.GetResponseData("vnp_TransactionNo"));
+            // Kiểm tra vnp_TxnRef
+            var vnp_orderIdStr = vnpay.GetResponseData("vnp_TxnRef");
+            if (string.IsNullOrEmpty(vnp_orderIdStr) || !long.TryParse(vnp_orderIdStr, out var vnp_orderId))
+            {
+                throw new FormatException("Mã giao dịch không hợp lệ.");
+            }
+
+            // Kiểm tra vnp_TransactionNo
+            var vnp_TransactionIdStr = vnpay.GetResponseData("vnp_TransactionNo");
+            if (string.IsNullOrEmpty(vnp_TransactionIdStr) || !long.TryParse(vnp_TransactionIdStr, out var vnp_TransactionId))
+            {
+                throw new FormatException("Mã giao dịch không hợp lệ.");
+            }
+
             var vnp_SecureHash = collections.FirstOrDefault(p => p.Key == "vnp_SecureHash").Value;
             var vnp_ResponseCode = vnpay.GetResponseData("vnp_ResponseCode");
             var vnp_OrderInfo = vnpay.GetResponseData("vnp_OrderInfo");
@@ -60,16 +72,23 @@ namespace PB.APIService.Services
                 };
             }
 
+            // Nếu mã phản hồi từ VNPay là thành công
+            bool success = vnp_ResponseCode == "00";
+
             return new VnPaymentResponseModel
             {
-                Success = true,
+                Success = success,
                 PaymentMethod = "VnPay",
                 OrderDescription = vnp_OrderInfo,
-                OrderId = vnp_orderId.ToString(),
+                OrderId = (int)vnp_orderId,
                 TransactionId = vnp_TransactionId.ToString(),
                 Token = vnp_SecureHash,
                 VnPayResponsecode = vnp_ResponseCode,
             };
         }
+
+
     }
 }
+    
+

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PB.APIService.RequestModel;
 using PB.APIService.Services;
@@ -39,6 +40,19 @@ namespace PB.APIService.Controllers
 
             return payment;
         }
+        [HttpGet("booking/{bookingId}")]
+        public async Task<ActionResult<Payment>> GetPaymentByBookingId(int bookingId)
+        {
+            var payment = await _unitOfWork.PaymentRepository.GetByBookingIdAsync(bookingId);
+
+            if (payment == null)
+            {
+                return NotFound(new { Message = "Payment not found for the given BookingId." });
+            }
+
+            return Ok(payment);
+        }
+
         // POST: api/Payment
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754    
         [HttpPost]
@@ -122,37 +136,95 @@ namespace PB.APIService.Controllers
         //{
         //    return View();
         //}
+       
 
         [HttpPost("create")]
-        public IActionResult CreatePayment([FromBody] VnPaymentRequestModel model)
+        public async Task<IActionResult> CreatePayment([FromBody] VnPaymentRequestModel model)
         {
             if (model == null)
             {
                 return BadRequest("Request cannot be null.");
             }
 
-            // Tạo URL thanh toán
+            // Tạo đối tượng Payment và lưu vào cơ sở dữ liệu
+            var payment = new Payment
+            {
+                Id = model.Id,
+                Method = "Thanh Toán Vnpay",
+                Amount = model.Amount, // Kiểm tra kiểu dữ liệu
+                Date = DateTime.Now,
+                Status = "Chưa thanh toán", // Đánh dấu trạng thái ban đầu là 'Pending'
+                BookingId = model.OrderId // Dùng OrderId từ model
+            };
+
+            try
+            {
+                await _unitOfWork.PaymentRepository.CreateAsync(payment);
+            }
+            catch (DbUpdateException dbEx)
+            {
+                return StatusCode(500, new
+                {
+                    Message = "Có lỗi xảy ra khi lưu thông tin thanh toán.",
+                    Error = dbEx.InnerException?.Message ?? dbEx.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    Message = "Có lỗi xảy ra khi lưu thông tin thanh toán.",
+                    Error = ex.InnerException?.Message ?? ex.Message
+                });
+            }
+
+            // Tạo URL thanh toán thông qua VNPay
             var paymentUrl = _vpnpayService.CreatePaymentUrl(HttpContext, model);
 
-            return Ok(new { PaymentUrl = paymentUrl });
+            return Ok(new { PaymentUrl = paymentUrl, PaymentId = payment.Id });
         }
-
-        [HttpGet("payment-callback")]
-        public IActionResult PaymentCallBack()
+        [HttpPost("callback")]
+        public async Task<IActionResult> PaymentCallBack()
         {
             var response = _vpnpayService.PaymentExecute(Request.Query);
 
-            if (response == null)
-                return BadRequest(new { Message = "Phản hồi VNPay không hợp lệ." });
+            if (response == null || response.VnPayResponsecode != "00")
+            {
+                return BadRequest(new { Message = "Thanh toán không thành công hoặc không hợp lệ." });
+            }
 
-            if (response.VnPayResponsecode != "00")
-                return BadRequest(new { Message = $"Lỗi thanh toán VNPay: {response.VnPayResponsecode}" });
+            // Tìm thanh toán bằng mã TxnRef (tương ứng với OrderId)
+            var payment = await _unitOfWork.PaymentRepository.GetAsync(p => p.Id == response.OrderId);
+            if (payment == null)
+            {
+                return NotFound("Không tìm thấy đơn hàng thanh toán.");
+            }
 
-           
+            // Cập nhật trạng thái khi thanh toán thành công
+            payment.Status = "Đã thanh toán";
+            await _unitOfWork.PaymentRepository.UpdateAsync(payment);
 
-            return Ok(new { Message = "Thanh toán VNPay thành công" });
+            return Ok(new { Message = "Trạng thái thanh toán đã được cập nhật thành công." });
         }
 
 
+
+
+
+
     }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
