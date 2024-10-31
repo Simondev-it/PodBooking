@@ -24,6 +24,8 @@
         public string Fullname { get; set; }
         public string Description { get; set; }
         public int Amount { get; set; }
+        public string Status { get; set; }
+        public string Method { get; set; }
         public DateTime CreatedDate { get; set; }
     }
 }

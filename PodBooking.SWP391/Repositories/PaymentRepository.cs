@@ -43,5 +43,12 @@ namespace PodBooking.SWP391.Repositories
         {
             return await _context.Payments.FirstOrDefaultAsync(predicate);
         }
+        public async Task AddAsync(Payment payment)
+        {
+            await _context.Payments.AddAsync(payment);
+            await _context.SaveChangesAsync();
+        }
+
+
     }
 }

@@ -157,6 +157,7 @@ namespace PB.APIService.Controllers
                 BookingId = model.OrderId // Dùng OrderId từ model
             };
 
+
             try
             {
                 await _unitOfWork.PaymentRepository.CreateAsync(payment);
@@ -183,18 +184,21 @@ namespace PB.APIService.Controllers
 
             return Ok(new { PaymentUrl = paymentUrl, PaymentId = payment.Id });
         }
-        [HttpPost("callback")]
+        [HttpGet("PaymentCallBack")]
         public async Task<IActionResult> PaymentCallBack()
         {
             var response = _vpnpayService.PaymentExecute(Request.Query);
 
             if (response == null || response.VnPayResponsecode != "00")
             {
-                return BadRequest(new { Message = "Thanh toán không thành công hoặc không hợp lệ." });
+                // Chuyển hướng đến trang lỗi thanh toán với thông báo
+                string FailUrl = $"http://localhost:5173?message={Uri.EscapeDataString($"Thanh toán thành công: {response.VnPayResponsecode}")}";
+                return Redirect(FailUrl);
             }
 
-            // Tìm thanh toán bằng mã TxnRef (tương ứng với OrderId)
-            var payment = await _unitOfWork.PaymentRepository.GetAsync(p => p.Id == response.OrderId);
+
+
+            var payment = await _unitOfWork.PaymentRepository.GetByBookingIdAsync(response.OrderId);
             if (payment == null)
             {
                 return NotFound("Không tìm thấy đơn hàng thanh toán.");
@@ -204,8 +208,12 @@ namespace PB.APIService.Controllers
             payment.Status = "Đã thanh toán";
             await _unitOfWork.PaymentRepository.UpdateAsync(payment);
 
-            return Ok(new { Message = "Trạng thái thanh toán đã được cập nhật thành công." });
+            // Chuyển hướng đến trang thanh toán thành công
+            string successUrl = $"https://localhost:7166/swagger/index.html?message={Uri.EscapeDataString($"Thanh toán thành công: {response.VnPayResponsecode}")}";
+            return Redirect(successUrl);
+
         }
+        
 
 
 
