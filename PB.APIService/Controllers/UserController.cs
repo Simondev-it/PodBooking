@@ -17,7 +17,7 @@ namespace PB.APIService.Controllers
 
         // GET: api/User
         [HttpGet]
-        [Authorize(Policy = "RequireAdminRole")]
+        [Authorize(Policy = "RequireUserOrAdminRole")]
         public async Task<ActionResult<IEnumerable<User>>> GetUser()
         {
             return await _unitOfWork.UserRepository.GetAllAsync();
@@ -36,7 +36,7 @@ namespace PB.APIService.Controllers
             return Ok(userIdAndNames);
         }
         [HttpGet("{id}")]
-        [Authorize(Policy = "RequireAdminRole")]
+        [Authorize(Policy = "RequireUserOrAdminRole")]
 
 
         public async Task<ActionResult<User>> GetUser(int id)
