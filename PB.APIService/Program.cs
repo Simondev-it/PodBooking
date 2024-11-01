@@ -125,11 +125,7 @@ namespace PB.APIService
 
             app.UseCors("AllowSpecificOrigin"); // Ensure CORS middleware is applied before Authentication
             app.UseRouting();
-            app.UseAuthorization();
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
+            
             app.UseAuthentication(); // Authentication middleware
             app.UseAuthorization(); // Authorization middleware
 

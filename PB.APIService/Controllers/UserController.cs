@@ -4,6 +4,7 @@ using PB.APIService.RequestModel;
 using PodBooking.SWP391;
 using PodBooking.SWP391.Models;
 using PB.APIService.RequestModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace PB.APIService.Controllers
 {
@@ -16,12 +17,27 @@ namespace PB.APIService.Controllers
 
         // GET: api/User
         [HttpGet]
+        [Authorize(Policy = "RequireAdminRole")]
         public async Task<ActionResult<IEnumerable<User>>> GetUser()
         {
             return await _unitOfWork.UserRepository.GetAllAsync();
         }
         // GET: api/User/5
-        [HttpGet("GetUser/{userId}")]
+        [HttpGet("GetIDandName")]
+        public async Task<ActionResult<IEnumerable<object>>> GetUserIdAndName()
+        {
+            var users = await _unitOfWork.UserRepository.GetAllAsync();
+            var userIdAndNames = users.Select(user => new
+            {
+                user.Id,
+                user.Name
+            }).ToList();
+
+            return Ok(userIdAndNames);
+        }
+        [HttpGet("{id}")]
+        [Authorize(Policy = "RequireAdminRole")]
+
 
         public async Task<ActionResult<User>> GetUser(int id)
         {

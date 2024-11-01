@@ -192,7 +192,7 @@ namespace PB.APIService.Controllers
             if (response == null || response.VnPayResponsecode != "00")
             {
                 // Chuyển hướng đến trang lỗi thanh toán với thông báo
-                string FailUrl = $"http://localhost:5173?message={Uri.EscapeDataString($"Thanh toán thành công: {response.VnPayResponsecode}")}";
+                string FailUrl = $"http://localhost:5173?message={Uri.EscapeDataString($"Thanh toán không thành công: {response.VnPayResponsecode}")}";
                 return Redirect(FailUrl);
             }
 
