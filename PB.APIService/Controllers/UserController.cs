@@ -24,14 +24,15 @@ namespace PB.APIService.Controllers
         }
         // GET: api/User/5
         [HttpGet("GetIDandName")]
-        [Authorize(Policy = "RequireUserOrAdminRole")]
+        
         public async Task<ActionResult<IEnumerable<object>>> GetUserIdAndName()
         {
             var users = await _unitOfWork.UserRepository.GetAllAsync();
             var userIdAndNames = users.Select(user => new
             {
                 user.Id,
-                user.Name
+                user.Name,
+                user.Image,
             }).ToList();
 
             return Ok(userIdAndNames);

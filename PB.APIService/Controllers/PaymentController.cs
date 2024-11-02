@@ -150,7 +150,7 @@ namespace PB.APIService.Controllers
             var payment = new Payment
             {
                 Id = model.Id,
-                Method = "Thanh Toán Vnpay",
+                Method = "Thanh toán qua VNPay",
                 Amount = model.Amount, // Kiểm tra kiểu dữ liệu
                 Date = DateTime.Now,
                 Status = "Chưa thanh toán", // Đánh dấu trạng thái ban đầu là 'Pending'
@@ -192,7 +192,7 @@ namespace PB.APIService.Controllers
             if (response == null || response.VnPayResponsecode != "00")
             {
                 // Chuyển hướng đến trang lỗi thanh toán với thông báo
-                string FailUrl = $"http://localhost:5173?message={Uri.EscapeDataString($"Thanh toán không thành công: {response.VnPayResponsecode}")}";
+                string FailUrl = $"http://localhost:5173?message={Uri.EscapeDataString($"Thanh toán không thành công")}";
                 return Redirect(FailUrl);
             }
 
@@ -209,7 +209,7 @@ namespace PB.APIService.Controllers
             await _unitOfWork.PaymentRepository.UpdateAsync(payment);
 
             // Chuyển hướng đến trang thanh toán thành công
-            string successUrl = $"https://localhost:7166/swagger/index.html?message={Uri.EscapeDataString($"Thanh toán thành công: {response.VnPayResponsecode}")}";
+            string successUrl = $"https://localhost:7166/swagger/index.html?message={Uri.EscapeDataString($"Thanh toán thành công")}";
             return Redirect(successUrl);
 
         }
