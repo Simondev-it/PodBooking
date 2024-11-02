@@ -1,6 +1,0 @@
-@APIInANutShell_HostAddress = http://localhost:5160
-
-GET {{APIInANutShell_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
