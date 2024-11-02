@@ -62,7 +62,8 @@ namespace PB.APIService
             {
                 options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
                 options.AddPolicy("RequireUserRole", policy => policy.RequireRole("User"));
-                options.AddPolicy("RequireUserOrAdminRole", policy => policy.RequireRole("User", "Admin"));
+                options.AddPolicy("RequireUserOrAdminRole", policy =>
+                policy.RequireRole("User", "Admin", "Staff"));
 
             });
 
