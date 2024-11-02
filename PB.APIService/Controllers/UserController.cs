@@ -17,13 +17,14 @@ namespace PB.APIService.Controllers
 
         // GET: api/User
         [HttpGet]
-        [Authorize(Policy = "RequireUserOrAdminRole")]
+        [Authorize(Policy = "RequireAdminRole")]
         public async Task<ActionResult<IEnumerable<User>>> GetUser()
         {
             return await _unitOfWork.UserRepository.GetAllAsync();
         }
         // GET: api/User/5
         [HttpGet("GetIDandName")]
+        [Authorize(Policy = "RequireUserOrAdminRole")]
         public async Task<ActionResult<IEnumerable<object>>> GetUserIdAndName()
         {
             var users = await _unitOfWork.UserRepository.GetAllAsync();
@@ -104,6 +105,8 @@ namespace PB.APIService.Controllers
             return CreatedAtAction("GetUser", new { id = user.Id }, user);
         }
         [HttpPut("{id}")]
+        [Authorize(Policy = "RequireUserOrAdminRole")]
+
         public async Task<IActionResult> PutUser(int id, UserRequest userRequest)
         {
             // Kiểm tra sản phẩm có tồn tại hay không
@@ -142,6 +145,7 @@ namespace PB.APIService.Controllers
         }
         // DELETE: api/User/5
         [HttpDelete("{id}")]
+        [Authorize(Policy = "RequireAdminRole")]
         public async Task<IActionResult> DeleteUser(int id)
         {
             var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
